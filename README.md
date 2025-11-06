@@ -2,13 +2,17 @@
 
 A comprehensive UAE cost of living calculator with Go backend, PostgreSQL/TimescaleDB, and Templ + HTMX frontend.
 
-## Current Status: Iteration 1.2
+## Current Status: Iteration 1.4 - REST API Complete
 
-This iteration includes:
-- Go HTTP server with health check endpoint
+This project now includes:
+- Go HTTP server with Echo framework
 - PostgreSQL 15 with TimescaleDB extension
-- First database migration (cost_data_points table)
-- Database connection pooling and health checks
+- Complete CRUD REST API for cost data points
+- Repository pattern with comprehensive tests
+- Request validation and error handling
+- Database migrations and connection pooling
+
+See `API_QUICK_REFERENCE.md` for API usage or `ITERATION_1.4_SUMMARY.md` for detailed documentation.
 
 ## Prerequisites
 
@@ -123,7 +127,17 @@ docker run -p 8080:8080 cost-of-living:latest
 
 ## Available Endpoints
 
+### Health Check
 - `GET /health` - Health check endpoint (returns status, database connection, and timestamp)
+
+### Cost Data Points API (v1)
+- `POST /api/v1/cost-data-points` - Create a new cost data point
+- `GET /api/v1/cost-data-points/:id` - Get a cost data point by ID
+- `GET /api/v1/cost-data-points` - List cost data points (with filtering and pagination)
+- `PUT /api/v1/cost-data-points/:id` - Update a cost data point
+- `DELETE /api/v1/cost-data-points/:id` - Delete a cost data point
+
+See `API_QUICK_REFERENCE.md` for detailed usage examples.
 
 ## Development
 
@@ -217,12 +231,33 @@ The main table for storing cost data points with TimescaleDB hypertable partitio
 - Hypertable with 1-month chunk intervals
 - Optimized for time-series queries
 
-## Next Steps (Iteration 1.3)
+## Quick API Test
 
-- Implement CRUD operations for cost data points
-- Add repository pattern
-- Create REST API endpoints for data management
-- Add validation and error handling
+```bash
+# Create a cost data point
+curl -X POST http://localhost:8080/api/v1/cost-data-points \
+  -H "Content-Type: application/json" \
+  -d '{
+    "category": "Housing",
+    "item_name": "1BR Apartment Marina",
+    "price": 85000,
+    "location": {"emirate": "Dubai", "city": "Dubai", "area": "Marina"},
+    "source": "manual"
+  }'
+
+# List all cost data points
+curl "http://localhost:8080/api/v1/cost-data-points?limit=10"
+
+# Run comprehensive API tests
+./test_api.sh
+```
+
+## Next Steps (Iteration 1.5)
+
+- Implement Temporal workflows for batch data ingestion
+- Add workflow activities for API operations
+- Implement retry logic and error handling in workflows
+- Create scheduled workflows for periodic updates
 
 ## Design Principles
 
