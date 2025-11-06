@@ -9,13 +9,14 @@ import (
 	"github.com/adonese/cost-of-living/internal/repository/postgres"
 	"github.com/adonese/cost-of-living/internal/scrapers"
 	"github.com/adonese/cost-of-living/internal/scrapers/bayut"
+	"github.com/adonese/cost-of-living/internal/scrapers/dubizzle"
 	"github.com/adonese/cost-of-living/internal/services"
 	"github.com/adonese/cost-of-living/pkg/database"
 	"github.com/adonese/cost-of-living/pkg/logger"
 )
 
 func main() {
-	scraperName := flag.String("scraper", "bayut", "Scraper to run (bayut, all)")
+	scraperName := flag.String("scraper", "bayut", "Scraper to run (bayut, dubizzle, all)")
 	flag.Parse()
 
 	// Initialize logger
@@ -39,14 +40,18 @@ func main() {
 	service := services.NewScraperService(repo)
 
 	// Register scrapers
-	bayutConfig := scrapers.Config{
+	scraperConfig := scrapers.Config{
 		UserAgent:  "Mozilla/5.0 (compatible; UAECostOfLiving/1.0; +http://localhost)",
 		RateLimit:  1, // 1 request per second
 		Timeout:    30,
 		MaxRetries: 3,
 	}
-	bayutScraper := bayut.NewBayutScraper(bayutConfig)
+
+	bayutScraper := bayut.NewBayutScraper(scraperConfig)
 	service.RegisterScraper(bayutScraper)
+
+	dubizzleScraper := dubizzle.NewDubizzleScraper(scraperConfig)
+	service.RegisterScraper(dubizzleScraper)
 
 	logger.Info("Registered scrapers", "count", len(service.ListScrapers()))
 

@@ -10,6 +10,7 @@ import (
 	"github.com/adonese/cost-of-living/internal/repository/postgres"
 	"github.com/adonese/cost-of-living/internal/scrapers"
 	"github.com/adonese/cost-of-living/internal/scrapers/bayut"
+	"github.com/adonese/cost-of-living/internal/scrapers/dubizzle"
 	"github.com/adonese/cost-of-living/internal/services"
 	"github.com/adonese/cost-of-living/internal/workflow"
 	"github.com/adonese/cost-of-living/pkg/database"
@@ -34,14 +35,18 @@ func main() {
 	scraperService := services.NewScraperService(repo)
 
 	// Register scrapers
-	bayutConfig := scrapers.Config{
+	scraperConfig := scrapers.Config{
 		UserAgent:  "Mozilla/5.0 (compatible; UAECostOfLiving/1.0)",
 		RateLimit:  1,
 		Timeout:    30,
 		MaxRetries: 3,
 	}
-	bayutScraper := bayut.NewBayutScraper(bayutConfig)
+
+	bayutScraper := bayut.NewBayutScraper(scraperConfig)
 	scraperService.RegisterScraper(bayutScraper)
+
+	dubizzleScraper := dubizzle.NewDubizzleScraper(scraperConfig)
+	scraperService.RegisterScraper(dubizzleScraper)
 
 	// Set activity dependencies
 	workflow.SetActivityDependencies(&workflow.ScraperActivityDependencies{

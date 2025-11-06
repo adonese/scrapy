@@ -252,12 +252,42 @@ curl "http://localhost:8080/api/v1/cost-data-points?limit=10"
 ./test_api.sh
 ```
 
-## Next Steps (Iteration 1.5)
+## Available Scrapers
 
-- Implement Temporal workflows for batch data ingestion
-- Add workflow activities for API operations
-- Implement retry logic and error handling in workflows
-- Create scheduled workflows for periodic updates
+The project currently supports the following data sources:
+
+### Bayut Scraper
+- **Status**: ✅ Working
+- **Coverage**: Dubai apartment rentals
+- **Usage**: `go run cmd/scraper/main.go -scraper bayut`
+- Successfully extracts price, location, bedrooms, and other property details
+
+### Dubizzle Scraper
+- **Status**: ⚠️ Implemented with anti-bot handling
+- **Coverage**: Dubai apartment rentals
+- **Usage**: `go run cmd/scraper/main.go -scraper dubizzle`
+- **Note**: Dubizzle uses Incapsula DDoS protection which may block automated requests. The scraper includes:
+  - Retry logic with exponential backoff
+  - Enhanced browser-like headers
+  - Error detection for anti-bot pages
+  - Graceful fallback mechanisms
+
+For production use, consider:
+- Browser automation (Selenium/Playwright)
+- Rotating proxies
+- Official API access if available
+
+### Running All Scrapers
+```bash
+go run cmd/scraper/main.go -scraper all
+```
+
+## Next Steps
+
+- Add more data sources (supermarkets, transportation, utilities)
+- Implement browser automation for protected sites
+- Frontend implementation (templ + htmx)
+- Data aggregation and trend analysis
 
 ## Design Principles
 
