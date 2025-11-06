@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'api'
+    static_configs:
+      # Using WSL2 host IP - adjust if running on different environment
+      - targets: ['172.29.64.1:8080']
+    metrics_path: '/metrics'
+
+  - job_name: 'temporal'
+    static_configs:
+      - targets: ['temporal:7233']
+    metrics_path: '/metrics'

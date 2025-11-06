@@ -8,22 +8,29 @@ import (
 	customMiddleware "github.com/adonese/cost-of-living/internal/middleware"
 	"github.com/adonese/cost-of-living/internal/repository/postgres"
 	"github.com/adonese/cost-of-living/pkg/database"
+	"github.com/adonese/cost-of-living/pkg/logger"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
+	// Initialize structured logger
+	logger.Init()
+	logger.Info("Starting UAE Cost of Living API")
+
 	// Connect to database
 	cfg := database.NewConfigFromEnv()
 	db, err := database.Connect(cfg)
 	if err != nil {
+		logger.Error("Failed to connect to database", "error", err)
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer db.Close()
 
 	// Initialize repositories
 	costDataPointRepo := postgres.NewCostDataPointRepository(db.GetConn())
-	log.Printf("Initialized CostDataPointRepository")
+	logger.Info("Initialized CostDataPointRepository")
 
 	// Initialize Echo
 	e := echo.New()
@@ -32,9 +39,13 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(customMiddleware.ErrorHandler())
+	e.Use(customMiddleware.MetricsMiddleware())
 
 	// Health check route
 	e.GET("/health", handlers.NewHealthHandler(db).Health)
+
+	// Metrics endpoint for Prometheus
+	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
 
 	// API v1 routes
 	api := e.Group("/api/v1")
@@ -53,8 +64,9 @@ func main() {
 		port = "8080"
 	}
 
-	log.Printf("Starting server on :%s", port)
+	logger.Info("Server starting", "port", port)
 	if err := e.Start(":" + port); err != nil {
+		logger.Error("Server failed to start", "error", err)
 		log.Fatal(err)
 	}
 }

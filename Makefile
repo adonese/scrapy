@@ -1,4 +1,4 @@
-.PHONY: run build test test-unit test-repo clean db-up db-down db-logs migrate migrate-down migrate-version temporal-up temporal-down temporal-ui worker run-workflow
+.PHONY: run build test test-unit test-repo clean db-up db-down db-logs migrate migrate-down migrate-version temporal-up temporal-down temporal-ui worker run-workflow prom-up prom-down prom-ui
 
 run:
 	go run cmd/api/main.go
@@ -59,6 +59,17 @@ worker:
 
 run-workflow:
 	go run examples/workflow_client.go
+
+# Observability commands
+prom-up:
+	docker-compose up -d prometheus
+	@echo "Prometheus UI: http://localhost:9090"
+
+prom-down:
+	docker-compose stop prometheus
+
+prom-ui:
+	@which open > /dev/null && open http://localhost:9090 || which xdg-open > /dev/null && xdg-open http://localhost:9090 || echo "Open http://localhost:9090 in your browser"
 
 # Setup for development
 setup: db-up migrate

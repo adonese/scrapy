@@ -31,6 +31,19 @@ services:
       - -c
       - "temporal server start-dev --ip 0.0.0.0 --ui-ip 0.0.0.0"
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: cost-of-living-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+
 volumes:
   postgres_data:
   temporal-data:
+  prometheus-data:
