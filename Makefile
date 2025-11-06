@@ -1,4 +1,4 @@
-.PHONY: run build test test-unit test-repo clean db-up db-down db-logs migrate migrate-down migrate-version temporal-up temporal-down temporal-ui worker run-workflow prom-up prom-down prom-ui scrape-bayut scrape-all
+.PHONY: run build test test-unit test-repo clean db-up db-down db-logs migrate migrate-down migrate-version temporal-up temporal-down temporal-ui worker run-workflow trigger-scrape trigger-scheduled prom-up prom-down prom-ui scrape-bayut scrape-all e2e-test
 
 run:
 	go run cmd/api/main.go
@@ -60,6 +60,13 @@ worker:
 run-workflow:
 	go run examples/workflow_client.go
 
+# Workflow trigger commands
+trigger-scrape:
+	go run cmd/trigger-scrape/main.go -scraper bayut
+
+trigger-scheduled:
+	go run cmd/trigger-scrape/main.go -scheduled
+
 # Observability commands
 prom-up:
 	docker-compose up -d prometheus
@@ -81,3 +88,24 @@ scrape-all:
 # Setup for development
 setup: db-up migrate
 	@echo "Development environment ready!"
+
+# Complete end-to-end test
+e2e-test:
+	@echo "Starting end-to-end test..."
+	@echo "1. Starting Temporal..."
+	@make temporal-up
+	@echo "2. Starting database..."
+	@make db-up
+	@sleep 3
+	@echo "3. Running migrations..."
+	@make migrate
+	@echo "4. Starting worker in background..."
+	@go run cmd/worker/main.go > /tmp/worker.log 2>&1 &
+	@echo $$! > /tmp/worker.pid
+	@sleep 3
+	@echo "5. Triggering scraper workflow..."
+	@go run cmd/trigger-scrape/main.go -scraper bayut || true
+	@echo "6. Cleaning up worker..."
+	@kill `cat /tmp/worker.pid` 2>/dev/null || true
+	@rm -f /tmp/worker.pid
+	@echo "E2E test complete!"
