@@ -1,4 +1,4 @@
-.PHONY: run build test test-unit test-repo clean db-up db-down db-logs migrate migrate-down migrate-version temporal-up temporal-down temporal-ui worker run-workflow prom-up prom-down prom-ui
+.PHONY: run build test test-unit test-repo clean db-up db-down db-logs migrate migrate-down migrate-version temporal-up temporal-down temporal-ui worker run-workflow prom-up prom-down prom-ui scrape-bayut scrape-all
 
 run:
 	go run cmd/api/main.go
@@ -70,6 +70,13 @@ prom-down:
 
 prom-ui:
 	@which open > /dev/null && open http://localhost:9090 || which xdg-open > /dev/null && xdg-open http://localhost:9090 || echo "Open http://localhost:9090 in your browser"
+
+# Scraper commands
+scrape-bayut:
+	go run cmd/scraper/main.go -scraper bayut
+
+scrape-all:
+	go run cmd/scraper/main.go -scraper all
 
 # Setup for development
 setup: db-up migrate
