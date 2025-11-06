@@ -18,5 +18,19 @@ services:
       timeout: 5s
       retries: 5
 
+  temporal:
+    container_name: cost-of-living-temporal
+    image: temporalio/admin-tools:1.24.2-tctl-1.18.1-cli-0.13.2
+    networks:
+      - default
+    ports:
+      - "7233:7233"
+      - "8233:8233"
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - "temporal server start-dev --ip 0.0.0.0 --ui-ip 0.0.0.0"
+
 volumes:
   postgres_data:
+  temporal-data:
