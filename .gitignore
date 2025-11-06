@@ -28,3 +28,12 @@ Thumbs.db
 
 # Temporary files
 /tmp/
+
+# Environment variables
+.env
+.env.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3

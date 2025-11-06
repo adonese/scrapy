@@ -9,13 +9,18 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// Note: This test uses a mock/nil database since we're testing the handler structure,
+// not the actual database connection. For database integration tests, see pkg/database tests.
 func TestHealth(t *testing.T) {
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	if err := Health(c); err != nil {
+	// Create handler with nil DB (will cause "disconnected" status but handler should not crash)
+	handler := &HealthHandler{db: nil}
+
+	if err := handler.Health(c); err != nil {
 		t.Fatalf("Health handler failed: %v", err)
 	}
 
@@ -34,5 +39,10 @@ func TestHealth(t *testing.T) {
 
 	if response.Timestamp == "" {
 		t.Error("timestamp should not be empty")
+	}
+
+	// With nil DB, database status should be "disconnected"
+	if response.Database != "disconnected" {
+		t.Errorf("expected database 'disconnected' with nil DB, got '%s'", response.Database)
 	}
 }
