@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/adonese/cost-of-living/internal/handlers"
+	"github.com/adonese/cost-of-living/internal/repository/postgres"
 	"github.com/adonese/cost-of-living/pkg/database"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -19,6 +20,11 @@ func main() {
 	}
 	defer db.Close()
 
+	// Initialize repositories
+	costDataPointRepo := postgres.NewCostDataPointRepository(db.GetConn())
+	log.Printf("Initialized CostDataPointRepository")
+
+	// Initialize Echo
 	e := echo.New()
 
 	// Basic middleware
@@ -27,6 +33,9 @@ func main() {
 
 	// Routes
 	e.GET("/health", handlers.NewHealthHandler(db).Health)
+
+	// TODO: Add API handlers for cost data points in iteration 1.4
+	_ = costDataPointRepo // Will be used in next iteration
 
 	// Start server
 	port := os.Getenv("PORT")
