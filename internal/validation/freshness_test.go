@@ -360,23 +360,25 @@ func TestConfigureSourceMaxAges(t *testing.T) {
 	fc := NewFreshnessChecker()
 
 	// Check that key sources are configured
-	sources := []string{
-		"Bayut", "Dubizzle", "DEWA", "SEWA", "AADC",
-		"RTA", "Careem", "KHDA",
+	expectedAges := map[string]time.Duration{
+		"Bayut":    7 * 24 * time.Hour,
+		"Dubizzle": 7 * 24 * time.Hour,
+		"DEWA":     30 * 24 * time.Hour,
+		"SEWA":     30 * 24 * time.Hour,
+		"AADC":     30 * 24 * time.Hour,
+		"RTA":      24 * time.Hour,
+		"Careem":   24 * time.Hour,
+		"KHDA":     365 * 24 * time.Hour,
 	}
 
-	for _, source := range sources {
+	for source, expectedAge := range expectedAges {
 		t.Run(source, func(t *testing.T) {
 			maxAge := fc.GetMaxAge(source)
 			if maxAge == 0 {
 				t.Errorf("Expected %s to have configured max age", source)
 			}
-			if maxAge == fc.defaultMaxAge && source != "UnknownSource" {
-				// Some sources should have specific configs
-				switch source {
-				case "Bayut", "Dubizzle", "DEWA", "RTA":
-					t.Errorf("Expected %s to have specific max age, got default", source)
-				}
+			if maxAge != expectedAge {
+				t.Errorf("Expected %s to have max age %v, got %v", source, expectedAge, maxAge)
 			}
 		})
 	}

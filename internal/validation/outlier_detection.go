@@ -155,7 +155,6 @@ func quartiles(data []float64) (float64, float64) {
 	copy(sorted, data)
 	sort.Float64s(sorted)
 
-	n := len(sorted)
 	q1 := percentile(sorted, 0.25)
 	q3 := percentile(sorted, 0.75)
 
@@ -228,10 +227,10 @@ func standardDeviation(data []float64, mean float64) float64 {
 }
 
 // medianAbsoluteDeviation calculates the MAD
-func medianAbsoluteDeviation(data []float64, median float64) float64 {
+func medianAbsoluteDeviation(data []float64, medianValue float64) float64 {
 	deviations := make([]float64, len(data))
 	for i, v := range data {
-		deviations[i] = math.Abs(v - median)
+		deviations[i] = math.Abs(v - medianValue)
 	}
 	return median(deviations)
 }

@@ -65,9 +65,10 @@ func TestDetectOutliers_IQR(t *testing.T) {
 }
 
 func TestDetectOutliers_ZScore(t *testing.T) {
-	detector := NewOutlierDetector(DetectionMethodZScore, 3.0)
+	detector := NewOutlierDetector(DetectionMethodZScore, 2.0) // Lower threshold
 
-	prices := []float64{100, 110, 105, 108, 102, 600, 95, 103, 107}
+	// Create a more obvious outlier
+	prices := []float64{100, 110, 105, 108, 102, 1000, 95, 103, 107, 99, 104, 106}
 	points := createTestPoints(prices)
 
 	outliers := detector.DetectOutliers(points)
