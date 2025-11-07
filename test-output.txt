@@ -1,0 +1,653 @@
+# github.com/adonese/cost-of-living/cmd/scraper
+package github.com/adonese/cost-of-living/cmd/scraper
+	imports github.com/adonese/cost-of-living/internal/scrapers from main.go
+	imports github.com/adonese/cost-of-living/internal/scrapers/aadc from factory.go
+	imports github.com/adonese/cost-of-living/internal/scrapers from aadc.go: import cycle not allowed
+FAIL	github.com/adonese/cost-of-living/cmd/scraper [setup failed]
+# github.com/adonese/cost-of-living/cmd/trigger-scrape
+package github.com/adonese/cost-of-living/cmd/scraper
+	imports github.com/adonese/cost-of-living/internal/scrapers from main.go
+	imports github.com/adonese/cost-of-living/internal/scrapers/aadc from factory.go
+	imports github.com/adonese/cost-of-living/internal/scrapers from aadc.go: import cycle not allowed
+FAIL	github.com/adonese/cost-of-living/cmd/trigger-scrape [setup failed]
+# github.com/adonese/cost-of-living/cmd/worker
+package github.com/adonese/cost-of-living/cmd/scraper
+	imports github.com/adonese/cost-of-living/internal/scrapers from main.go
+	imports github.com/adonese/cost-of-living/internal/scrapers/aadc from factory.go
+	imports github.com/adonese/cost-of-living/internal/scrapers from aadc.go: import cycle not allowed
+FAIL	github.com/adonese/cost-of-living/cmd/worker [setup failed]
+# github.com/adonese/cost-of-living/examples/workflow_demo
+package github.com/adonese/cost-of-living/cmd/scraper
+	imports github.com/adonese/cost-of-living/internal/scrapers from main.go
+	imports github.com/adonese/cost-of-living/internal/scrapers/aadc from factory.go
+	imports github.com/adonese/cost-of-living/internal/scrapers from aadc.go: import cycle not allowed
+FAIL	github.com/adonese/cost-of-living/examples/workflow_demo [setup failed]
+# github.com/adonese/cost-of-living/internal/scrapers
+package github.com/adonese/cost-of-living/cmd/scraper
+	imports github.com/adonese/cost-of-living/internal/scrapers from main.go
+	imports github.com/adonese/cost-of-living/internal/scrapers/aadc from factory.go
+	imports github.com/adonese/cost-of-living/internal/scrapers from aadc.go: import cycle not allowed
+FAIL	github.com/adonese/cost-of-living/internal/scrapers [setup failed]
+# github.com/adonese/cost-of-living/internal/scrapers/aadc
+package github.com/adonese/cost-of-living/cmd/scraper
+	imports github.com/adonese/cost-of-living/internal/scrapers from main.go
+	imports github.com/adonese/cost-of-living/internal/scrapers/aadc from factory.go
+	imports github.com/adonese/cost-of-living/internal/scrapers from aadc.go: import cycle not allowed
+FAIL	github.com/adonese/cost-of-living/internal/scrapers/aadc [setup failed]
+# github.com/adonese/cost-of-living/internal/scrapers/bayut
+package github.com/adonese/cost-of-living/cmd/scraper
+	imports github.com/adonese/cost-of-living/internal/scrapers from main.go
+	imports github.com/adonese/cost-of-living/internal/scrapers/aadc from factory.go
+	imports github.com/adonese/cost-of-living/internal/scrapers from aadc.go: import cycle not allowed
+FAIL	github.com/adonese/cost-of-living/internal/scrapers/bayut [setup failed]
+# github.com/adonese/cost-of-living/internal/scrapers/careem
+package github.com/adonese/cost-of-living/cmd/scraper
+	imports github.com/adonese/cost-of-living/internal/scrapers from main.go
+	imports github.com/adonese/cost-of-living/internal/scrapers/aadc from factory.go
+	imports github.com/adonese/cost-of-living/internal/scrapers from aadc.go: import cycle not allowed
+FAIL	github.com/adonese/cost-of-living/internal/scrapers/careem [setup failed]
+# github.com/adonese/cost-of-living/internal/scrapers/dewa
+package github.com/adonese/cost-of-living/cmd/scraper
+	imports github.com/adonese/cost-of-living/internal/scrapers from main.go
+	imports github.com/adonese/cost-of-living/internal/scrapers/aadc from factory.go
+	imports github.com/adonese/cost-of-living/internal/scrapers from aadc.go: import cycle not allowed
+FAIL	github.com/adonese/cost-of-living/internal/scrapers/dewa [setup failed]
+# github.com/adonese/cost-of-living/internal/scrapers/dubizzle
+package github.com/adonese/cost-of-living/cmd/scraper
+	imports github.com/adonese/cost-of-living/internal/scrapers from main.go
+	imports github.com/adonese/cost-of-living/internal/scrapers/aadc from factory.go
+	imports github.com/adonese/cost-of-living/internal/scrapers from aadc.go: import cycle not allowed
+FAIL	github.com/adonese/cost-of-living/internal/scrapers/dubizzle [setup failed]
+# github.com/adonese/cost-of-living/internal/scrapers/rta
+package github.com/adonese/cost-of-living/cmd/scraper
+	imports github.com/adonese/cost-of-living/internal/scrapers from main.go
+	imports github.com/adonese/cost-of-living/internal/scrapers/aadc from factory.go
+	imports github.com/adonese/cost-of-living/internal/scrapers from aadc.go: import cycle not allowed
+FAIL	github.com/adonese/cost-of-living/internal/scrapers/rta [setup failed]
+# github.com/adonese/cost-of-living/internal/scrapers/sewa
+package github.com/adonese/cost-of-living/cmd/scraper
+	imports github.com/adonese/cost-of-living/internal/scrapers from main.go
+	imports github.com/adonese/cost-of-living/internal/scrapers/aadc from factory.go
+	imports github.com/adonese/cost-of-living/internal/scrapers from aadc.go: import cycle not allowed
+FAIL	github.com/adonese/cost-of-living/internal/scrapers/sewa [setup failed]
+# github.com/adonese/cost-of-living/internal/services
+package github.com/adonese/cost-of-living/cmd/scraper
+	imports github.com/adonese/cost-of-living/internal/scrapers from main.go
+	imports github.com/adonese/cost-of-living/internal/scrapers/aadc from factory.go
+	imports github.com/adonese/cost-of-living/internal/scrapers from aadc.go: import cycle not allowed
+FAIL	github.com/adonese/cost-of-living/internal/services [setup failed]
+# github.com/adonese/cost-of-living/internal/workflow
+package github.com/adonese/cost-of-living/cmd/scraper
+	imports github.com/adonese/cost-of-living/internal/scrapers from main.go
+	imports github.com/adonese/cost-of-living/internal/scrapers/aadc from factory.go
+	imports github.com/adonese/cost-of-living/internal/scrapers from aadc.go: import cycle not allowed
+FAIL	github.com/adonese/cost-of-living/internal/workflow [setup failed]
+# github.com/adonese/cost-of-living/test/integration
+package github.com/adonese/cost-of-living/cmd/scraper
+	imports github.com/adonese/cost-of-living/internal/scrapers from main.go
+	imports github.com/adonese/cost-of-living/internal/scrapers/aadc from factory.go
+	imports github.com/adonese/cost-of-living/internal/scrapers from aadc.go: import cycle not allowed
+FAIL	github.com/adonese/cost-of-living/test/integration [setup failed]
+	github.com/adonese/cost-of-living/cmd/api		coverage: 0.0% of statements
+	github.com/adonese/cost-of-living/cmd/migrate		coverage: 0.0% of statements
+	github.com/adonese/cost-of-living/examples/repository		coverage: 0.0% of statements
+=== RUN   TestCostDataPointHandler_Create
+=== RUN   TestCostDataPointHandler_Create/successful_creation
+=== RUN   TestCostDataPointHandler_Create/validation_error_-_missing_required_fields
+=== RUN   TestCostDataPointHandler_Create/validation_error_-_invalid_price
+=== RUN   TestCostDataPointHandler_Create/invalid_JSON
+--- PASS: TestCostDataPointHandler_Create (0.00s)
+    --- PASS: TestCostDataPointHandler_Create/successful_creation (0.00s)
+    --- PASS: TestCostDataPointHandler_Create/validation_error_-_missing_required_fields (0.00s)
+    --- PASS: TestCostDataPointHandler_Create/validation_error_-_invalid_price (0.00s)
+    --- PASS: TestCostDataPointHandler_Create/invalid_JSON (0.00s)
+=== RUN   TestCostDataPointHandler_GetByID
+=== RUN   TestCostDataPointHandler_GetByID/successful_get_by_ID_with_recorded_at
+=== RUN   TestCostDataPointHandler_GetByID/not_found
+=== RUN   TestCostDataPointHandler_GetByID/missing_ID
+--- PASS: TestCostDataPointHandler_GetByID (0.00s)
+    --- PASS: TestCostDataPointHandler_GetByID/successful_get_by_ID_with_recorded_at (0.00s)
+    --- PASS: TestCostDataPointHandler_GetByID/not_found (0.00s)
+    --- PASS: TestCostDataPointHandler_GetByID/missing_ID (0.00s)
+=== RUN   TestCostDataPointHandler_List
+=== RUN   TestCostDataPointHandler_List/successful_list
+=== RUN   TestCostDataPointHandler_List/list_with_filters
+=== RUN   TestCostDataPointHandler_List/list_with_pagination
+--- PASS: TestCostDataPointHandler_List (0.00s)
+    --- PASS: TestCostDataPointHandler_List/successful_list (0.00s)
+    --- PASS: TestCostDataPointHandler_List/list_with_filters (0.00s)
+    --- PASS: TestCostDataPointHandler_List/list_with_pagination (0.00s)
+=== RUN   TestCostDataPointHandler_Update
+=== RUN   TestCostDataPointHandler_Update/successful_update
+=== RUN   TestCostDataPointHandler_Update/update_not_found
+=== RUN   TestCostDataPointHandler_Update/missing_recorded_at
+--- PASS: TestCostDataPointHandler_Update (0.00s)
+    --- PASS: TestCostDataPointHandler_Update/successful_update (0.00s)
+    --- PASS: TestCostDataPointHandler_Update/update_not_found (0.00s)
+    --- PASS: TestCostDataPointHandler_Update/missing_recorded_at (0.00s)
+=== RUN   TestCostDataPointHandler_Delete
+=== RUN   TestCostDataPointHandler_Delete/successful_delete
+=== RUN   TestCostDataPointHandler_Delete/delete_not_found
+=== RUN   TestCostDataPointHandler_Delete/missing_recorded_at
+--- PASS: TestCostDataPointHandler_Delete (0.00s)
+    --- PASS: TestCostDataPointHandler_Delete/successful_delete (0.00s)
+    --- PASS: TestCostDataPointHandler_Delete/delete_not_found (0.00s)
+    --- PASS: TestCostDataPointHandler_Delete/missing_recorded_at (0.00s)
+=== RUN   TestHealth
+--- PASS: TestHealth (0.00s)
+PASS
+coverage: 62.1% of statements
+ok  	github.com/adonese/cost-of-living/internal/handlers	0.011s	coverage: 62.1% of statements
+	github.com/adonese/cost-of-living/internal/handlers/dto		coverage: 0.0% of statements
+	github.com/adonese/cost-of-living/internal/middleware		coverage: 0.0% of statements
+?   	github.com/adonese/cost-of-living/internal/models	[no test files]
+?   	github.com/adonese/cost-of-living/internal/repository	[no test files]
+	github.com/adonese/cost-of-living/internal/repository/mock		coverage: 0.0% of statements
+=== RUN   TestCreate
+=== RUN   TestCreate/successful_create
+=== RUN   TestCreate/create_with_custom_ID
+=== RUN   TestCreate/create_with_minimal_fields
+--- PASS: TestCreate (0.06s)
+    --- PASS: TestCreate/successful_create (0.02s)
+    --- PASS: TestCreate/create_with_custom_ID (0.01s)
+    --- PASS: TestCreate/create_with_minimal_fields (0.01s)
+=== RUN   TestGetByID
+=== RUN   TestGetByID/get_existing_record
+=== RUN   TestGetByID/get_non-existent_record
+--- PASS: TestGetByID (0.02s)
+    --- PASS: TestGetByID/get_existing_record (0.01s)
+    --- PASS: TestGetByID/get_non-existent_record (0.00s)
+=== RUN   TestList
+=== RUN   TestList/list_all
+=== RUN   TestList/filter_by_category
+=== RUN   TestList/filter_by_emirate
+=== RUN   TestList/filter_by_date_range
+=== RUN   TestList/pagination
+=== RUN   TestList/combined_filters
+--- PASS: TestList (0.04s)
+    --- PASS: TestList/list_all (0.00s)
+    --- PASS: TestList/filter_by_category (0.00s)
+    --- PASS: TestList/filter_by_emirate (0.00s)
+    --- PASS: TestList/filter_by_date_range (0.00s)
+    --- PASS: TestList/pagination (0.00s)
+    --- PASS: TestList/combined_filters (0.00s)
+=== RUN   TestUpdate
+=== RUN   TestUpdate/successful_update
+=== RUN   TestUpdate/update_non-existent_record
+--- PASS: TestUpdate (0.02s)
+    --- PASS: TestUpdate/successful_update (0.01s)
+    --- PASS: TestUpdate/update_non-existent_record (0.00s)
+=== RUN   TestDelete
+=== RUN   TestDelete/successful_delete
+=== RUN   TestDelete/delete_non-existent_record
+--- PASS: TestDelete (0.01s)
+    --- PASS: TestDelete/successful_delete (0.01s)
+    --- PASS: TestDelete/delete_non-existent_record (0.00s)
+PASS
+coverage: 86.5% of statements
+ok  	github.com/adonese/cost-of-living/internal/repository/postgres	0.153s	coverage: 86.5% of statements
+=== RUN   TestNewDuplicateChecker
+--- PASS: TestNewDuplicateChecker (0.00s)
+=== RUN   TestDetectDuplicates_ExactDuplicates
+--- PASS: TestDetectDuplicates_ExactDuplicates (0.00s)
+=== RUN   TestDetectDuplicates_NoDuplicates
+--- PASS: TestDetectDuplicates_NoDuplicates (0.00s)
+=== RUN   TestDetectDuplicates_SmallDataset
+--- PASS: TestDetectDuplicates_SmallDataset (0.00s)
+=== RUN   TestAreSimilar
+=== RUN   TestAreSimilar/similar_price
+=== RUN   TestAreSimilar/different_category
+=== RUN   TestAreSimilar/different_item_name
+=== RUN   TestAreSimilar/different_emirate
+=== RUN   TestAreSimilar/different_source
+=== RUN   TestAreSimilar/price_too_different
+=== RUN   TestAreSimilar/outside_time_window
+--- PASS: TestAreSimilar (0.00s)
+    --- PASS: TestAreSimilar/similar_price (0.00s)
+    --- PASS: TestAreSimilar/different_category (0.00s)
+    --- PASS: TestAreSimilar/different_item_name (0.00s)
+    --- PASS: TestAreSimilar/different_emirate (0.00s)
+    --- PASS: TestAreSimilar/different_source (0.00s)
+    --- PASS: TestAreSimilar/price_too_different (0.00s)
+    --- PASS: TestAreSimilar/outside_time_window (0.00s)
+=== RUN   TestCalculateSimilarity
+=== RUN   TestCalculateSimilarity/identical
+=== RUN   TestCalculateSimilarity/different_category_only
+=== RUN   TestCalculateSimilarity/completely_different
+--- PASS: TestCalculateSimilarity (0.00s)
+    --- PASS: TestCalculateSimilarity/identical (0.00s)
+    --- PASS: TestCalculateSimilarity/different_category_only (0.00s)
+    --- PASS: TestCalculateSimilarity/completely_different (0.00s)
+=== RUN   TestIsDuplicate
+=== RUN   TestIsDuplicate/exact_duplicate
+=== RUN   TestIsDuplicate/not_duplicate
+--- PASS: TestIsDuplicate (0.00s)
+    --- PASS: TestIsDuplicate/exact_duplicate (0.00s)
+    --- PASS: TestIsDuplicate/not_duplicate (0.00s)
+=== RUN   TestDeduplicateDataPoints
+--- PASS: TestDeduplicateDataPoints (0.00s)
+=== RUN   TestDeduplicateDataPoints_EmptySlice
+--- PASS: TestDeduplicateDataPoints_EmptySlice (0.00s)
+=== RUN   TestGenerateDuplicateReport
+--- PASS: TestGenerateDuplicateReport (0.00s)
+=== RUN   TestRoundPrice
+=== RUN   TestRoundPrice/#00
+=== RUN   TestRoundPrice/#01
+=== RUN   TestRoundPrice/#02
+=== RUN   TestRoundPrice/#03
+--- PASS: TestRoundPrice (0.00s)
+    --- PASS: TestRoundPrice/#00 (0.00s)
+    --- PASS: TestRoundPrice/#01 (0.00s)
+    --- PASS: TestRoundPrice/#02 (0.00s)
+    --- PASS: TestRoundPrice/#03 (0.00s)
+=== RUN   TestGenerateSignature
+--- PASS: TestGenerateSignature (0.00s)
+=== RUN   TestNewFreshnessChecker
+--- PASS: TestNewFreshnessChecker (0.00s)
+=== RUN   TestCheckFreshness
+=== RUN   TestCheckFreshness/fresh_bayut_data
+=== RUN   TestCheckFreshness/stale_bayut_data
+=== RUN   TestCheckFreshness/expired_bayut_data
+=== RUN   TestCheckFreshness/fresh_rta_data
+=== RUN   TestCheckFreshness/stale_rta_data
+=== RUN   TestCheckFreshness/unknown_source
+--- PASS: TestCheckFreshness (0.00s)
+    --- PASS: TestCheckFreshness/fresh_bayut_data (0.00s)
+    --- PASS: TestCheckFreshness/stale_bayut_data (0.00s)
+    --- PASS: TestCheckFreshness/expired_bayut_data (0.00s)
+    --- PASS: TestCheckFreshness/fresh_rta_data (0.00s)
+    --- PASS: TestCheckFreshness/stale_rta_data (0.00s)
+    --- PASS: TestCheckFreshness/unknown_source (0.00s)
+=== RUN   TestFreshnessStatus_String
+=== RUN   TestFreshnessStatus_String/FRESH
+=== RUN   TestFreshnessStatus_String/STALE
+=== RUN   TestFreshnessStatus_String/EXPIRED
+--- PASS: TestFreshnessStatus_String (0.00s)
+    --- PASS: TestFreshnessStatus_String/FRESH (0.00s)
+    --- PASS: TestFreshnessStatus_String/STALE (0.00s)
+    --- PASS: TestFreshnessStatus_String/EXPIRED (0.00s)
+=== RUN   TestGetMaxAge
+=== RUN   TestGetMaxAge/Bayut
+=== RUN   TestGetMaxAge/DEWA
+=== RUN   TestGetMaxAge/RTA
+=== RUN   TestGetMaxAge/UnknownSource
+--- PASS: TestGetMaxAge (0.00s)
+    --- PASS: TestGetMaxAge/Bayut (0.00s)
+    --- PASS: TestGetMaxAge/DEWA (0.00s)
+    --- PASS: TestGetMaxAge/RTA (0.00s)
+    --- PASS: TestGetMaxAge/UnknownSource (0.00s)
+=== RUN   TestSetMaxAge
+--- PASS: TestSetMaxAge (0.00s)
+=== RUN   TestSetDefaultMaxAge
+--- PASS: TestSetDefaultMaxAge (0.00s)
+=== RUN   TestGenerateFreshnessReport
+--- PASS: TestGenerateFreshnessReport (0.00s)
+=== RUN   TestGenerateFreshnessReport_Empty
+--- PASS: TestGenerateFreshnessReport_Empty (0.00s)
+=== RUN   TestGetRecommendedUpdateFrequency
+=== RUN   TestGetRecommendedUpdateFrequency/Bayut
+=== RUN   TestGetRecommendedUpdateFrequency/RTA
+=== RUN   TestGetRecommendedUpdateFrequency/DEWA
+=== RUN   TestGetRecommendedUpdateFrequency/UnknownSource
+--- PASS: TestGetRecommendedUpdateFrequency (0.00s)
+    --- PASS: TestGetRecommendedUpdateFrequency/Bayut (0.00s)
+    --- PASS: TestGetRecommendedUpdateFrequency/RTA (0.00s)
+    --- PASS: TestGetRecommendedUpdateFrequency/DEWA (0.00s)
+    --- PASS: TestGetRecommendedUpdateFrequency/UnknownSource (0.00s)
+=== RUN   TestNeedsUpdate
+=== RUN   TestNeedsUpdate/bayut_needs_update
+=== RUN   TestNeedsUpdate/bayut_doesn't_need_update
+=== RUN   TestNeedsUpdate/rta_needs_update
+=== RUN   TestNeedsUpdate/rta_doesn't_need_update
+--- PASS: TestNeedsUpdate (0.00s)
+    --- PASS: TestNeedsUpdate/bayut_needs_update (0.00s)
+    --- PASS: TestNeedsUpdate/bayut_doesn't_need_update (0.00s)
+    --- PASS: TestNeedsUpdate/rta_needs_update (0.00s)
+    --- PASS: TestNeedsUpdate/rta_doesn't_need_update (0.00s)
+=== RUN   TestGenerateFreshnessMap
+--- PASS: TestGenerateFreshnessMap (0.00s)
+=== RUN   TestFreshnessMap_GetStaleSources
+--- PASS: TestFreshnessMap_GetStaleSources (0.00s)
+=== RUN   TestFreshnessMap_GetFreshSources
+--- PASS: TestFreshnessMap_GetFreshSources (0.00s)
+=== RUN   TestConfigureSourceMaxAges
+=== RUN   TestConfigureSourceMaxAges/SEWA
+=== RUN   TestConfigureSourceMaxAges/AADC
+=== RUN   TestConfigureSourceMaxAges/RTA
+=== RUN   TestConfigureSourceMaxAges/Careem
+=== RUN   TestConfigureSourceMaxAges/KHDA
+=== RUN   TestConfigureSourceMaxAges/Bayut
+=== RUN   TestConfigureSourceMaxAges/Dubizzle
+=== RUN   TestConfigureSourceMaxAges/DEWA
+--- PASS: TestConfigureSourceMaxAges (0.00s)
+    --- PASS: TestConfigureSourceMaxAges/SEWA (0.00s)
+    --- PASS: TestConfigureSourceMaxAges/AADC (0.00s)
+    --- PASS: TestConfigureSourceMaxAges/RTA (0.00s)
+    --- PASS: TestConfigureSourceMaxAges/Careem (0.00s)
+    --- PASS: TestConfigureSourceMaxAges/KHDA (0.00s)
+    --- PASS: TestConfigureSourceMaxAges/Bayut (0.00s)
+    --- PASS: TestConfigureSourceMaxAges/Dubizzle (0.00s)
+    --- PASS: TestConfigureSourceMaxAges/DEWA (0.00s)
+=== RUN   TestNewOutlierDetector
+--- PASS: TestNewOutlierDetector (0.00s)
+=== RUN   TestDetectOutliers_IQR
+--- PASS: TestDetectOutliers_IQR (0.00s)
+=== RUN   TestDetectOutliers_ZScore
+--- PASS: TestDetectOutliers_ZScore (0.00s)
+=== RUN   TestDetectOutliers_ModifiedZScore
+--- PASS: TestDetectOutliers_ModifiedZScore (0.00s)
+=== RUN   TestDetectOutliers_SmallDataset
+--- PASS: TestDetectOutliers_SmallDataset (0.00s)
+=== RUN   TestDetectOutliers_NoOutliers
+--- PASS: TestDetectOutliers_NoOutliers (0.00s)
+=== RUN   TestDetectOutliers_MultipleCategories
+--- PASS: TestDetectOutliers_MultipleCategories (0.00s)
+=== RUN   TestDetectOutliersWithInfo
+--- PASS: TestDetectOutliersWithInfo (0.00s)
+=== RUN   TestQuartiles
+--- PASS: TestQuartiles (0.00s)
+=== RUN   TestPercentile
+--- PASS: TestPercentile (0.00s)
+=== RUN   TestMean
+=== RUN   TestMean/simple
+=== RUN   TestMean/zeros
+=== RUN   TestMean/empty
+=== RUN   TestMean/single
+--- PASS: TestMean (0.00s)
+    --- PASS: TestMean/simple (0.00s)
+    --- PASS: TestMean/zeros (0.00s)
+    --- PASS: TestMean/empty (0.00s)
+    --- PASS: TestMean/single (0.00s)
+=== RUN   TestMedian
+=== RUN   TestMedian/odd_count
+=== RUN   TestMedian/even_count
+=== RUN   TestMedian/single
+=== RUN   TestMedian/empty
+--- PASS: TestMedian (0.00s)
+    --- PASS: TestMedian/odd_count (0.00s)
+    --- PASS: TestMedian/even_count (0.00s)
+    --- PASS: TestMedian/single (0.00s)
+    --- PASS: TestMedian/empty (0.00s)
+=== RUN   TestStandardDeviation
+--- PASS: TestStandardDeviation (0.00s)
+=== RUN   TestMedianAbsoluteDeviation
+--- PASS: TestMedianAbsoluteDeviation (0.00s)
+=== RUN   TestDetectOutliers_AllSameValues
+--- PASS: TestDetectOutliers_AllSameValues (0.00s)
+=== RUN   TestDetectOutliers_MultipleOutliers
+--- PASS: TestDetectOutliers_MultipleOutliers (0.00s)
+=== RUN   TestGetAllRules
+--- PASS: TestGetAllRules (0.00s)
+=== RUN   TestCommonRules_RequiredFields
+=== RUN   TestCommonRules_RequiredFields/all_fields_present
+=== RUN   TestCommonRules_RequiredFields/missing_item_name
+=== RUN   TestCommonRules_RequiredFields/missing_category
+=== RUN   TestCommonRules_RequiredFields/missing_source
+=== RUN   TestCommonRules_RequiredFields/missing_emirate
+--- PASS: TestCommonRules_RequiredFields (0.00s)
+    --- PASS: TestCommonRules_RequiredFields/all_fields_present (0.00s)
+    --- PASS: TestCommonRules_RequiredFields/missing_item_name (0.00s)
+    --- PASS: TestCommonRules_RequiredFields/missing_category (0.00s)
+    --- PASS: TestCommonRules_RequiredFields/missing_source (0.00s)
+    --- PASS: TestCommonRules_RequiredFields/missing_emirate (0.00s)
+=== RUN   TestCommonRules_ValidCategory
+=== RUN   TestCommonRules_ValidCategory/Housing
+=== RUN   TestCommonRules_ValidCategory/Utilities
+=== RUN   TestCommonRules_ValidCategory/Transportation
+=== RUN   TestCommonRules_ValidCategory/Food
+=== RUN   TestCommonRules_ValidCategory/Education
+=== RUN   TestCommonRules_ValidCategory/InvalidCategory
+=== RUN   TestCommonRules_ValidCategory/#00
+--- PASS: TestCommonRules_ValidCategory (0.00s)
+    --- PASS: TestCommonRules_ValidCategory/Housing (0.00s)
+    --- PASS: TestCommonRules_ValidCategory/Utilities (0.00s)
+    --- PASS: TestCommonRules_ValidCategory/Transportation (0.00s)
+    --- PASS: TestCommonRules_ValidCategory/Food (0.00s)
+    --- PASS: TestCommonRules_ValidCategory/Education (0.00s)
+    --- PASS: TestCommonRules_ValidCategory/InvalidCategory (0.00s)
+    --- PASS: TestCommonRules_ValidCategory/#00 (0.00s)
+=== RUN   TestCommonRules_ValidEmirate
+=== RUN   TestCommonRules_ValidEmirate/Dubai
+=== RUN   TestCommonRules_ValidEmirate/Abu_Dhabi
+=== RUN   TestCommonRules_ValidEmirate/Sharjah
+=== RUN   TestCommonRules_ValidEmirate/Ajman
+=== RUN   TestCommonRules_ValidEmirate/InvalidEmirate
+=== RUN   TestCommonRules_ValidEmirate/#00
+--- PASS: TestCommonRules_ValidEmirate (0.00s)
+    --- PASS: TestCommonRules_ValidEmirate/Dubai (0.00s)
+    --- PASS: TestCommonRules_ValidEmirate/Abu_Dhabi (0.00s)
+    --- PASS: TestCommonRules_ValidEmirate/Sharjah (0.00s)
+    --- PASS: TestCommonRules_ValidEmirate/Ajman (0.00s)
+    --- PASS: TestCommonRules_ValidEmirate/InvalidEmirate (0.00s)
+    --- PASS: TestCommonRules_ValidEmirate/#00 (0.00s)
+=== RUN   TestCommonRules_PositivePrice
+=== RUN   TestCommonRules_PositivePrice/#00
+=== RUN   TestCommonRules_PositivePrice/#01
+=== RUN   TestCommonRules_PositivePrice/#02
+=== RUN   TestCommonRules_PositivePrice/#03
+=== RUN   TestCommonRules_PositivePrice/#04
+=== RUN   TestCommonRules_PositivePrice/#05
+--- PASS: TestCommonRules_PositivePrice (0.00s)
+    --- PASS: TestCommonRules_PositivePrice/#00 (0.00s)
+    --- PASS: TestCommonRules_PositivePrice/#01 (0.00s)
+    --- PASS: TestCommonRules_PositivePrice/#02 (0.00s)
+    --- PASS: TestCommonRules_PositivePrice/#03 (0.00s)
+    --- PASS: TestCommonRules_PositivePrice/#04 (0.00s)
+    --- PASS: TestCommonRules_PositivePrice/#05 (0.00s)
+=== RUN   TestCommonRules_ValidConfidence
+=== RUN   TestCommonRules_ValidConfidence/#00
+=== RUN   TestCommonRules_ValidConfidence/#01
+=== RUN   TestCommonRules_ValidConfidence/#02
+=== RUN   TestCommonRules_ValidConfidence/#03
+=== RUN   TestCommonRules_ValidConfidence/#04
+=== RUN   TestCommonRules_ValidConfidence/#05
+--- PASS: TestCommonRules_ValidConfidence (0.00s)
+    --- PASS: TestCommonRules_ValidConfidence/#00 (0.00s)
+    --- PASS: TestCommonRules_ValidConfidence/#01 (0.00s)
+    --- PASS: TestCommonRules_ValidConfidence/#02 (0.00s)
+    --- PASS: TestCommonRules_ValidConfidence/#03 (0.00s)
+    --- PASS: TestCommonRules_ValidConfidence/#04 (0.00s)
+    --- PASS: TestCommonRules_ValidConfidence/#05 (0.00s)
+=== RUN   TestCommonRules_ValidTimestamp
+=== RUN   TestCommonRules_ValidTimestamp/recent
+=== RUN   TestCommonRules_ValidTimestamp/one_month_ago
+=== RUN   TestCommonRules_ValidTimestamp/future
+=== RUN   TestCommonRules_ValidTimestamp/too_old
+=== RUN   TestCommonRules_ValidTimestamp/zero_time
+--- PASS: TestCommonRules_ValidTimestamp (0.00s)
+    --- PASS: TestCommonRules_ValidTimestamp/recent (0.00s)
+    --- PASS: TestCommonRules_ValidTimestamp/one_month_ago (0.00s)
+    --- PASS: TestCommonRules_ValidTimestamp/future (0.00s)
+    --- PASS: TestCommonRules_ValidTimestamp/too_old (0.00s)
+    --- PASS: TestCommonRules_ValidTimestamp/zero_time (0.00s)
+=== RUN   TestCommonRules_MinMaxPriceConsistency
+=== RUN   TestCommonRules_MinMaxPriceConsistency/valid_range
+=== RUN   TestCommonRules_MinMaxPriceConsistency/min_>_max
+=== RUN   TestCommonRules_MinMaxPriceConsistency/price_below_min
+=== RUN   TestCommonRules_MinMaxPriceConsistency/price_above_max
+=== RUN   TestCommonRules_MinMaxPriceConsistency/no_min/max
+--- PASS: TestCommonRules_MinMaxPriceConsistency (0.00s)
+    --- PASS: TestCommonRules_MinMaxPriceConsistency/valid_range (0.00s)
+    --- PASS: TestCommonRules_MinMaxPriceConsistency/min_>_max (0.00s)
+    --- PASS: TestCommonRules_MinMaxPriceConsistency/price_below_min (0.00s)
+    --- PASS: TestCommonRules_MinMaxPriceConsistency/price_above_max (0.00s)
+    --- PASS: TestCommonRules_MinMaxPriceConsistency/no_min/max (0.00s)
+=== RUN   TestHousingRules_PriceRange
+=== RUN   TestHousingRules_PriceRange/#00
+=== RUN   TestHousingRules_PriceRange/#01
+=== RUN   TestHousingRules_PriceRange/#02
+=== RUN   TestHousingRules_PriceRange/#03
+--- PASS: TestHousingRules_PriceRange (0.00s)
+    --- PASS: TestHousingRules_PriceRange/#00 (0.00s)
+    --- PASS: TestHousingRules_PriceRange/#01 (0.00s)
+    --- PASS: TestHousingRules_PriceRange/#02 (0.00s)
+    --- PASS: TestHousingRules_PriceRange/#03 (0.00s)
+=== RUN   TestHousingRules_Attributes
+=== RUN   TestHousingRules_Attributes/all_attributes
+=== RUN   TestHousingRules_Attributes/missing_bedrooms
+=== RUN   TestHousingRules_Attributes/missing_area_sqft
+--- PASS: TestHousingRules_Attributes (0.00s)
+    --- PASS: TestHousingRules_Attributes/all_attributes (0.00s)
+    --- PASS: TestHousingRules_Attributes/missing_bedrooms (0.00s)
+    --- PASS: TestHousingRules_Attributes/missing_area_sqft (0.00s)
+=== RUN   TestUtilitiesRules_PriceRange
+=== RUN   TestUtilitiesRules_PriceRange/#00
+=== RUN   TestUtilitiesRules_PriceRange/#01
+=== RUN   TestUtilitiesRules_PriceRange/#02
+=== RUN   TestUtilitiesRules_PriceRange/#03
+--- PASS: TestUtilitiesRules_PriceRange (0.00s)
+    --- PASS: TestUtilitiesRules_PriceRange/#00 (0.00s)
+    --- PASS: TestUtilitiesRules_PriceRange/#01 (0.00s)
+    --- PASS: TestUtilitiesRules_PriceRange/#02 (0.00s)
+    --- PASS: TestUtilitiesRules_PriceRange/#03 (0.00s)
+=== RUN   TestTransportationRules_PriceRange
+=== RUN   TestTransportationRules_PriceRange/#00
+=== RUN   TestTransportationRules_PriceRange/#01
+=== RUN   TestTransportationRules_PriceRange/#02
+=== RUN   TestTransportationRules_PriceRange/#03
+--- PASS: TestTransportationRules_PriceRange (0.00s)
+    --- PASS: TestTransportationRules_PriceRange/#00 (0.00s)
+    --- PASS: TestTransportationRules_PriceRange/#01 (0.00s)
+    --- PASS: TestTransportationRules_PriceRange/#02 (0.00s)
+    --- PASS: TestTransportationRules_PriceRange/#03 (0.00s)
+=== RUN   TestPriceRanges
+=== RUN   TestPriceRanges/Housing
+=== RUN   TestPriceRanges/Utilities
+=== RUN   TestPriceRanges/Transportation
+=== RUN   TestPriceRanges/Food
+=== RUN   TestPriceRanges/Education
+=== RUN   TestPriceRanges/Entertainment
+=== RUN   TestPriceRanges/Healthcare
+=== RUN   TestPriceRanges/Shopping
+=== RUN   TestPriceRanges/Communications
+=== RUN   TestPriceRanges/Personal_Care
+--- PASS: TestPriceRanges (0.00s)
+    --- PASS: TestPriceRanges/Housing (0.00s)
+    --- PASS: TestPriceRanges/Utilities (0.00s)
+    --- PASS: TestPriceRanges/Transportation (0.00s)
+    --- PASS: TestPriceRanges/Food (0.00s)
+    --- PASS: TestPriceRanges/Education (0.00s)
+    --- PASS: TestPriceRanges/Entertainment (0.00s)
+    --- PASS: TestPriceRanges/Healthcare (0.00s)
+    --- PASS: TestPriceRanges/Shopping (0.00s)
+    --- PASS: TestPriceRanges/Communications (0.00s)
+    --- PASS: TestPriceRanges/Personal_Care (0.00s)
+=== RUN   TestValidEmirates
+=== RUN   TestValidEmirates/Dubai
+=== RUN   TestValidEmirates/Abu_Dhabi
+=== RUN   TestValidEmirates/Sharjah
+=== RUN   TestValidEmirates/Ajman
+=== RUN   TestValidEmirates/Umm_Al_Quwain
+=== RUN   TestValidEmirates/Ras_Al_Khaimah
+=== RUN   TestValidEmirates/Fujairah
+--- PASS: TestValidEmirates (0.00s)
+    --- PASS: TestValidEmirates/Dubai (0.00s)
+    --- PASS: TestValidEmirates/Abu_Dhabi (0.00s)
+    --- PASS: TestValidEmirates/Sharjah (0.00s)
+    --- PASS: TestValidEmirates/Ajman (0.00s)
+    --- PASS: TestValidEmirates/Umm_Al_Quwain (0.00s)
+    --- PASS: TestValidEmirates/Ras_Al_Khaimah (0.00s)
+    --- PASS: TestValidEmirates/Fujairah (0.00s)
+=== RUN   TestValidCategories
+=== RUN   TestValidCategories/Housing
+=== RUN   TestValidCategories/Utilities
+=== RUN   TestValidCategories/Transportation
+=== RUN   TestValidCategories/Food
+=== RUN   TestValidCategories/Education
+=== RUN   TestValidCategories/Entertainment
+=== RUN   TestValidCategories/Healthcare
+=== RUN   TestValidCategories/Shopping
+=== RUN   TestValidCategories/Communications
+=== RUN   TestValidCategories/Personal_Care
+--- PASS: TestValidCategories (0.00s)
+    --- PASS: TestValidCategories/Housing (0.00s)
+    --- PASS: TestValidCategories/Utilities (0.00s)
+    --- PASS: TestValidCategories/Transportation (0.00s)
+    --- PASS: TestValidCategories/Food (0.00s)
+    --- PASS: TestValidCategories/Education (0.00s)
+    --- PASS: TestValidCategories/Entertainment (0.00s)
+    --- PASS: TestValidCategories/Healthcare (0.00s)
+    --- PASS: TestValidCategories/Shopping (0.00s)
+    --- PASS: TestValidCategories/Communications (0.00s)
+    --- PASS: TestValidCategories/Personal_Care (0.00s)
+=== RUN   TestNewValidator
+--- PASS: TestNewValidator (0.00s)
+=== RUN   TestValidateDataPoint_Valid
+--- PASS: TestValidateDataPoint_Valid (0.00s)
+=== RUN   TestValidateDataPoint_Invalid
+=== RUN   TestValidateDataPoint_Invalid/negative_price
+=== RUN   TestValidateDataPoint_Invalid/empty_item_name
+=== RUN   TestValidateDataPoint_Invalid/invalid_emirate
+=== RUN   TestValidateDataPoint_Invalid/invalid_category
+--- PASS: TestValidateDataPoint_Invalid (0.00s)
+    --- PASS: TestValidateDataPoint_Invalid/negative_price (0.00s)
+    --- PASS: TestValidateDataPoint_Invalid/empty_item_name (0.00s)
+    --- PASS: TestValidateDataPoint_Invalid/invalid_emirate (0.00s)
+    --- PASS: TestValidateDataPoint_Invalid/invalid_category (0.00s)
+=== RUN   TestValidateDataPoint_NilDataPoint
+--- PASS: TestValidateDataPoint_NilDataPoint (0.00s)
+=== RUN   TestValidateBatch
+--- PASS: TestValidateBatch (0.00s)
+=== RUN   TestValidateBatch_EmptyBatch
+--- PASS: TestValidateBatch_EmptyBatch (0.00s)
+=== RUN   TestValidateBatch_ExceedsMaxSize
+--- PASS: TestValidateBatch_ExceedsMaxSize (0.00s)
+=== RUN   TestGetRulesForCategory
+--- PASS: TestGetRulesForCategory (0.00s)
+=== RUN   TestAddRule
+--- PASS: TestAddRule (0.00s)
+=== RUN   TestRemoveRule
+--- PASS: TestRemoveRule (0.00s)
+=== RUN   TestValidationResult_QualityScore
+=== RUN   TestValidationResult_QualityScore/no_errors
+=== RUN   TestValidationResult_QualityScore/one_error
+=== RUN   TestValidationResult_QualityScore/one_warning
+=== RUN   TestValidationResult_QualityScore/mixed_errors
+--- PASS: TestValidationResult_QualityScore (0.00s)
+    --- PASS: TestValidationResult_QualityScore/no_errors (0.00s)
+    --- PASS: TestValidationResult_QualityScore/one_error (0.00s)
+    --- PASS: TestValidationResult_QualityScore/one_warning (0.00s)
+    --- PASS: TestValidationResult_QualityScore/mixed_errors (0.00s)
+=== RUN   TestValidatorConfig
+--- PASS: TestValidatorConfig (0.00s)
+=== RUN   TestValidateDataPoint_WithOutlierDetectionDisabled
+--- PASS: TestValidateDataPoint_WithOutlierDetectionDisabled (0.00s)
+=== RUN   TestSeverityString
+=== RUN   TestSeverityString/INFO
+=== RUN   TestSeverityString/WARNING
+=== RUN   TestSeverityString/ERROR
+--- PASS: TestSeverityString (0.00s)
+    --- PASS: TestSeverityString/INFO (0.00s)
+    --- PASS: TestSeverityString/WARNING (0.00s)
+    --- PASS: TestSeverityString/ERROR (0.00s)
+=== RUN   TestValidationError_Error
+--- PASS: TestValidationError_Error (0.00s)
+PASS
+coverage: 86.5% of statements
+ok  	github.com/adonese/cost-of-living/internal/validation	0.010s	coverage: 86.5% of statements
+=== RUN   TestNewConfigFromEnv
+--- PASS: TestNewConfigFromEnv (0.00s)
+=== RUN   TestNewConfigFromEnvWithCustomValues
+--- PASS: TestNewConfigFromEnvWithCustomValues (0.00s)
+=== RUN   TestConnectIntegration
+2025/11/07 10:21:45 Database connection established successfully
+--- PASS: TestConnectIntegration (0.01s)
+=== RUN   TestDatabaseNilConnection
+--- PASS: TestDatabaseNilConnection (0.00s)
+PASS
+coverage: 85.7% of statements
+ok  	github.com/adonese/cost-of-living/pkg/database	0.018s	coverage: 85.7% of statements
+	github.com/adonese/cost-of-living/pkg/logger		coverage: 0.0% of statements
+?   	github.com/adonese/cost-of-living/pkg/metrics	[no test files]
+=== RUN   TestLoadFixture
+--- PASS: TestLoadFixture (0.00s)
+=== RUN   TestFixtureExists
+--- PASS: TestFixtureExists (0.00s)
+=== RUN   TestListFixtures
+--- PASS: TestListFixtures (0.00s)
+=== RUN   TestMustLoadFixture
+--- PASS: TestMustLoadFixture (0.00s)
+PASS
+coverage: 15.5% of statements
+ok  	github.com/adonese/cost-of-living/test/helpers	0.006s	coverage: 15.5% of statements
+FAIL
