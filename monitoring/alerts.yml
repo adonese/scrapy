@@ -1,0 +1,230 @@
+# Data Quality Monitoring Alerts Configuration
+# This file defines alert rules for data quality issues
+
+alerts:
+  # High error rate alert
+  - name: high_error_rate
+    description: "Alert when validation error rate exceeds threshold"
+    condition: error_rate > 0.05
+    severity: warning
+    threshold: 0.05  # 5% error rate
+    window: 1h       # Evaluate over 1 hour
+    action:
+      - type: create_issue
+        repository: cost-of-living
+        labels: ["data-quality", "high-priority"]
+        assignees: ["data-team"]
+      - type: notify_slack
+        channel: "#data-alerts"
+        message: "High error rate detected: {{error_rate}}%"
+
+  # Stale data alert
+  - name: stale_data
+    description: "Alert when data sources become stale"
+    condition: freshness == STALE
+    severity: info
+    action:
+      - type: notify_slack
+        channel: "#data-alerts"
+        message: "Stale data detected for source: {{source}}"
+
+  # Expired data alert
+  - name: expired_data
+    description: "Alert when data sources expire"
+    condition: freshness == EXPIRED
+    severity: error
+    action:
+      - type: create_issue
+        repository: cost-of-living
+        labels: ["data-quality", "urgent", "expired-data"]
+        assignees: ["data-team"]
+      - type: notify_slack
+        channel: "#data-alerts"
+        message: "❌ Expired data for source: {{source}}. Immediate update required!"
+      - type: notify_email
+        to: ["data-team@example.com"]
+        subject: "URGENT: Expired data source - {{source}}"
+
+  # Outlier detected alert
+  - name: outlier_detected
+    description: "Alert when statistical outliers are detected"
+    condition: outlier_score > 3.0
+    severity: warning
+    action:
+      - type: manual_review
+        reviewers: ["data-team"]
+      - type: notify_slack
+        channel: "#data-alerts"
+        message: "Outlier detected in {{category}}: {{item_name}} - Price: {{price}} AED"
+
+  # High duplicate rate alert
+  - name: high_duplicate_rate
+    description: "Alert when duplicate rate exceeds threshold"
+    condition: duplicate_rate > 0.01
+    severity: warning
+    threshold: 0.01  # 1% duplicate rate
+    window: 24h
+    action:
+      - type: notify_slack
+        channel: "#data-alerts"
+        message: "High duplicate rate: {{duplicate_rate}}%. Run deduplication script."
+
+  # Low confidence data alert
+  - name: low_confidence_data
+    description: "Alert when data confidence is low"
+    condition: avg_confidence < 0.6
+    severity: info
+    threshold: 0.6
+    action:
+      - type: notify_slack
+        channel: "#data-alerts"
+        message: "Low confidence data detected for {{source}}: {{avg_confidence}}"
+
+  # Scraper failure alert
+  - name: scraper_failure
+    description: "Alert when a scraper fails"
+    condition: scraper_status == FAILED
+    severity: error
+    action:
+      - type: create_issue
+        repository: cost-of-living
+        labels: ["scraper-failure", "urgent"]
+        assignees: ["engineering-team"]
+      - type: notify_slack
+        channel: "#engineering-alerts"
+        message: "🚨 Scraper failure: {{scraper_name}} - {{error_message}}"
+      - type: notify_pagerduty
+        service: "cost-of-living-scrapers"
+        severity: "high"
+
+  # Data volume anomaly alert
+  - name: data_volume_anomaly
+    description: "Alert when data volume deviates significantly"
+    condition: abs(volume_change) > 0.5
+    severity: warning
+    threshold: 0.5   # 50% deviation
+    window: 24h
+    action:
+      - type: notify_slack
+        channel: "#data-alerts"
+        message: "Data volume anomaly for {{source}}: {{volume_change}}% change"
+
+  # Price range violation alert
+  - name: price_range_violation
+    description: "Alert when prices are outside expected ranges"
+    condition: price_out_of_range == true
+    severity: error
+    action:
+      - type: manual_review
+        reviewers: ["data-team"]
+      - type: notify_slack
+        channel: "#data-alerts"
+        message: "Price range violation: {{item_name}} - {{price}} AED (expected: {{min_price}}-{{max_price}})"
+
+  # Missing required fields alert
+  - name: missing_required_fields
+    description: "Alert when required fields are missing"
+    condition: has_missing_fields == true
+    severity: error
+    action:
+      - type: create_issue
+        repository: cost-of-living
+        labels: ["data-quality", "validation-error"]
+      - type: notify_slack
+        channel: "#data-alerts"
+        message: "Missing required fields in {{source}}: {{missing_fields}}"
+
+  # Quality score drop alert
+  - name: quality_score_drop
+    description: "Alert when overall quality score drops"
+    condition: quality_score < 0.7
+    severity: warning
+    threshold: 0.7
+    action:
+      - type: notify_slack
+        channel: "#data-alerts"
+        message: "Quality score dropped below threshold: {{quality_score}}"
+      - type: run_validation
+        script: "scripts/validate-data.sh"
+
+# Notification channels configuration
+notification_channels:
+  slack:
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    default_channel: "#data-alerts"
+    mention_users:
+      - "@data-team"
+      - "@engineering-team"
+
+  email:
+    smtp_server: "${SMTP_SERVER}"
+    smtp_port: 587
+    from_address: "alerts@example.com"
+    use_tls: true
+
+  pagerduty:
+    integration_key: "${PAGERDUTY_INTEGRATION_KEY}"
+    default_severity: "high"
+
+  github:
+    token: "${GITHUB_TOKEN}"
+    repository: "adonese/cost-of-living"
+
+# Alert schedule and throttling
+alert_config:
+  # Evaluation frequency
+  evaluation_interval: 5m
+
+  # Throttling to prevent alert spam
+  throttle:
+    # Don't send same alert more than once in this period
+    repeat_interval: 1h
+
+    # Group similar alerts
+    group_by: ["source", "category"]
+    group_interval: 5m
+
+  # Alert escalation
+  escalation:
+    - level: 1
+      wait: 15m
+      notify: ["slack"]
+    - level: 2
+      wait: 1h
+      notify: ["slack", "email"]
+    - level: 3
+      wait: 4h
+      notify: ["slack", "email", "pagerduty"]
+
+# Quality thresholds (used by multiple alerts)
+thresholds:
+  error_rate: 0.05           # 5%
+  duplicate_rate: 0.01       # 1%
+  outlier_rate: 0.02         # 2%
+  quality_score: 0.7         # 0-1 scale
+  confidence_score: 0.6      # 0-1 scale
+  volume_deviation: 0.5      # 50%
+
+# Source-specific thresholds (override defaults)
+source_thresholds:
+  Bayut:
+    quality_score: 0.8
+    confidence_score: 0.7
+
+  DEWA:
+    quality_score: 0.95
+    confidence_score: 0.95
+
+  RTA:
+    quality_score: 0.9
+    confidence_score: 0.9
+
+# Maintenance windows (no alerts during these times)
+maintenance_windows:
+  - name: "Weekly scraper maintenance"
+    schedule: "0 2 * * 0"  # Sundays at 2 AM
+    duration: 2h
+
+  - name: "Monthly data refresh"
+    schedule: "0 3 1 * *"  # 1st of month at 3 AM
+    duration: 4h

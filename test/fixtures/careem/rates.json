@@ -1,0 +1,61 @@
+{
+  "service_type": "careem_go",
+  "emirate": "Dubai",
+  "base_fare": 8.0,
+  "per_km": 1.97,
+  "per_minute_wait": 0.5,
+  "minimum_fare": 12.0,
+  "peak_surcharge_multiplier": 1.5,
+  "airport_surcharge": 20.0,
+  "salik_toll": 5.0,
+  "effective_date": "2025-01-01",
+  "source": "careem_help_center",
+  "last_updated": "2025-01-01T00:00:00Z",
+  "rates": [
+    {
+      "service_type": "careem_go",
+      "description": "Economy ride option",
+      "base_fare": 8.0,
+      "per_km": 1.97,
+      "per_minute_wait": 0.5,
+      "minimum_fare": 12.0
+    },
+    {
+      "service_type": "careem_go_plus",
+      "description": "Premium ride option",
+      "base_fare": 10.0,
+      "per_km": 2.45,
+      "per_minute_wait": 0.6,
+      "minimum_fare": 15.0
+    },
+    {
+      "service_type": "careem_comfort",
+      "description": "Comfortable ride option",
+      "base_fare": 12.0,
+      "per_km": 2.80,
+      "per_minute_wait": 0.7,
+      "minimum_fare": 18.0
+    }
+  ],
+  "surcharges": {
+    "peak_hours": {
+      "description": "Peak hour surcharge (7-9 AM, 5-8 PM weekdays)",
+      "multiplier": 1.5
+    },
+    "airport_pickup": {
+      "description": "Airport pickup surcharge",
+      "amount": 20.0
+    },
+    "salik_toll": {
+      "description": "Per toll gate crossing",
+      "amount": 5.0
+    }
+  },
+  "notes": [
+    "Rates are subject to change based on demand",
+    "Peak hour surcharges apply during rush hours",
+    "Airport surcharge applies to DXB and DWC",
+    "Salik toll is charged per gate crossed",
+    "Rates may vary by emirate"
+  ]
+}

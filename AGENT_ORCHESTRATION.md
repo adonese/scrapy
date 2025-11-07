@@ -32,8 +32,8 @@
 ### Wave 3: Transportation & Validation [IN PROGRESS]
 | Agent | Task | Status | Started | Completed | Blockers | Outputs |
 |-------|------|--------|---------|-----------|----------|---------|
-| Agent 7 | RTA Scraper | IN_PROGRESS | 2025-11-07 | - | None | - |
-| Agent 8 | Careem Scraper | IN_PROGRESS | 2025-11-07 | - | None | - |
+| Agent 7 | RTA Scraper | COMPLETE | 2025-11-07 | 2025-11-07 | None | internal/scrapers/rta/, internal/workflow/rta_workflow.go, test/integration/rta_integration_test.go |
+| Agent 8 | Careem Scraper | COMPLETE | 2025-11-07 | 2025-11-07 | None | internal/scrapers/careem/, internal/workflow/careem_workflow.go, test/integration/careem_integration_test.go, test/fixtures/careem/ |
 | Agent 9 | Validation Pipeline | IN_PROGRESS | 2025-11-07 | - | None | internal/validation/ |
 
 ### Wave 4: Integration [BLOCKED]
