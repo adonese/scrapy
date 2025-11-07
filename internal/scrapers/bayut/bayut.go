@@ -21,12 +21,19 @@ type BayutScraper struct {
 	config      scrapers.Config
 	client      *http.Client
 	rateLimiter *rate.Limiter
+	emirate     string // Dubai, Sharjah, Ajman, Abu Dhabi, etc.
 }
 
-// NewBayutScraper creates a new Bayut scraper
+// NewBayutScraper creates a new Bayut scraper for Dubai (default)
 func NewBayutScraper(config scrapers.Config) *BayutScraper {
+	return NewBayutScraperForEmirate(config, "Dubai")
+}
+
+// NewBayutScraperForEmirate creates a new Bayut scraper for a specific emirate
+func NewBayutScraperForEmirate(config scrapers.Config, emirate string) *BayutScraper {
 	return &BayutScraper{
-		config: config,
+		config:  config,
+		emirate: emirate,
 		client: &http.Client{
 			Timeout: time.Duration(config.Timeout) * time.Second,
 		},
@@ -36,7 +43,10 @@ func NewBayutScraper(config scrapers.Config) *BayutScraper {
 
 // Name returns the scraper identifier
 func (s *BayutScraper) Name() string {
-	return "bayut"
+	if s.emirate == "Dubai" {
+		return "bayut" // Maintain backward compatibility
+	}
+	return fmt.Sprintf("bayut_%s", strings.ToLower(strings.ReplaceAll(s.emirate, " ", "_")))
 }
 
 // CanScrape checks if scraping is possible (rate limit)
@@ -46,10 +56,11 @@ func (s *BayutScraper) CanScrape() bool {
 
 // Scrape fetches housing data from Bayut
 func (s *BayutScraper) Scrape(ctx context.Context) ([]*models.CostDataPoint, error) {
-	logger.Info("Starting Bayut scrape")
+	logger.Info("Starting Bayut scrape", "emirate", s.emirate)
 
-	// Start with apartments for rent in Dubai
-	url := "https://www.bayut.com/to-rent/apartments/dubai/"
+	// Build URL for the specific emirate
+	url := s.buildURL()
+	logger.Info("Scraping URL", "url", url)
 
 	// Wait for rate limit
 	if err := s.rateLimiter.Wait(ctx); err != nil {
@@ -95,12 +106,12 @@ func (s *BayutScraper) Scrape(ctx context.Context) ([]*models.CostDataPoint, err
 
 	for _, selector := range selectors {
 		count := 0
-		doc.Find(selector).Each(func(i int, s *goquery.Selection) {
+		doc.Find(selector).Each(func(i int, selection *goquery.Selection) {
 			if i >= 10 { // Limit to first 10 for initial implementation
 				return
 			}
 
-			cdp := extractListing(s, url)
+			cdp := s.extractListing(selection, url)
 			if cdp != nil {
 				dataPoints = append(dataPoints, cdp)
 				count++
@@ -127,7 +138,7 @@ func (s *BayutScraper) Scrape(ctx context.Context) ([]*models.CostDataPoint, err
 }
 
 // extractListing extracts a single listing from a property card
-func extractListing(s *goquery.Selection, baseURL string) *models.CostDataPoint {
+func (scraper *BayutScraper) extractListing(s *goquery.Selection, baseURL string) *models.CostDataPoint {
 	// Extract price - try multiple selectors
 	priceText := ""
 	priceSelectors := []string{
@@ -181,6 +192,13 @@ func extractListing(s *goquery.Selection, baseURL string) *models.CostDataPoint 
 	}
 
 	location := parseLocation(locationText)
+	// Ensure emirate is set correctly
+	if location.Emirate == "" || location.Emirate == "Dubai" {
+		location.Emirate = scraper.emirate
+	}
+	if location.City == "" {
+		location.City = scraper.emirate
+	}
 
 	// Extract property details
 	bedrooms := ""
@@ -284,8 +302,8 @@ func (s *BayutScraper) extractWithGeneralApproach(doc *goquery.Document, baseURL
 			ItemName:    title,
 			Price:       price,
 			Location: models.Location{
-				Emirate: "Dubai",
-				City:    "Dubai",
+				Emirate: s.emirate,
+				City:    s.emirate,
 			},
 			Source:      "bayut",
 			SourceURL:   propertyURL,
@@ -300,4 +318,26 @@ func (s *BayutScraper) extractWithGeneralApproach(doc *goquery.Document, baseURL
 	})
 
 	return dataPoints
+}
+
+// buildURL constructs the Bayut URL for the emirate
+func (s *BayutScraper) buildURL() string {
+	emiratePath := s.emirateToURLPath(s.emirate)
+	return fmt.Sprintf("https://www.bayut.com/to-rent/apartments/%s/", emiratePath)
+}
+
+// emirateToURLPath converts emirate name to Bayut URL format
+func (s *BayutScraper) emirateToURLPath(emirate string) string {
+	// Bayut URL patterns:
+	// Dubai -> dubai
+	// Abu Dhabi -> abu-dhabi
+	// Sharjah -> sharjah
+	// Ajman -> ajman
+	// Ras Al Khaimah -> ras-al-khaimah
+	// Fujairah -> fujairah
+	// Umm Al Quwain -> umm-al-quwain
+
+	emirate = strings.ToLower(emirate)
+	emirate = strings.ReplaceAll(emirate, " ", "-")
+	return emirate
 }

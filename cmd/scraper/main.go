@@ -17,11 +17,12 @@ import (
 
 func main() {
 	scraperName := flag.String("scraper", "bayut", "Scraper to run (bayut, dubizzle, all)")
+	emirate := flag.String("emirate", "all", "Emirate to scrape (Dubai, Sharjah, Ajman, Abu Dhabi, all)")
 	flag.Parse()
 
 	// Initialize logger
 	logger.Init()
-	logger.Info("Starting scraper CLI", "scraper", *scraperName)
+	logger.Info("Starting scraper CLI", "scraper", *scraperName, "emirate", *emirate)
 
 	// Connect to database
 	config := database.NewConfigFromEnv()
@@ -47,11 +48,29 @@ func main() {
 		MaxRetries: 3,
 	}
 
-	bayutScraper := bayut.NewBayutScraper(scraperConfig)
-	service.RegisterScraper(bayutScraper)
+	// Determine which emirates to register
+	emirates := []string{}
+	if *emirate == "all" {
+		emirates = []string{"Dubai", "Sharjah", "Ajman", "Abu Dhabi"}
+	} else {
+		emirates = []string{*emirate}
+	}
 
-	dubizzleScraper := dubizzle.NewDubizzleScraper(scraperConfig)
-	service.RegisterScraper(dubizzleScraper)
+	// Register Bayut scrapers for requested emirates
+	if *scraperName == "bayut" || *scraperName == "all" {
+		for _, em := range emirates {
+			bayutScraper := bayut.NewBayutScraperForEmirate(scraperConfig, em)
+			service.RegisterScraper(bayutScraper)
+			logger.Info("Registered Bayut scraper", "emirate", em)
+		}
+	}
+
+	// Register Dubizzle scrapers (still only Dubai for now)
+	if *scraperName == "dubizzle" || *scraperName == "all" {
+		dubizzleScraper := dubizzle.NewDubizzleScraper(scraperConfig)
+		service.RegisterScraper(dubizzleScraper)
+		logger.Info("Registered Dubizzle scraper", "emirate", "Dubai")
+	}
 
 	logger.Info("Registered scrapers", "count", len(service.ListScrapers()))
 

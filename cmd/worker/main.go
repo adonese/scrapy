@@ -42,11 +42,18 @@ func main() {
 		MaxRetries: 3,
 	}
 
-	bayutScraper := bayut.NewBayutScraper(scraperConfig)
-	scraperService.RegisterScraper(bayutScraper)
+	// Register Bayut scrapers for all major emirates
+	emirates := []string{"Dubai", "Sharjah", "Ajman", "Abu Dhabi"}
+	for _, emirate := range emirates {
+		bayutScraper := bayut.NewBayutScraperForEmirate(scraperConfig, emirate)
+		scraperService.RegisterScraper(bayutScraper)
+		logger.Info("Registered Bayut scraper", "emirate", emirate)
+	}
 
+	// Register Dubizzle scraper (Dubai only for now)
 	dubizzleScraper := dubizzle.NewDubizzleScraper(scraperConfig)
 	scraperService.RegisterScraper(dubizzleScraper)
+	logger.Info("Registered Dubizzle scraper", "emirate", "Dubai")
 
 	// Set activity dependencies
 	workflow.SetActivityDependencies(&workflow.ScraperActivityDependencies{
