@@ -358,6 +358,9 @@ func (m *MockRepository) Delete(ctx context.Context, id string, recordedAt time.
 func (m *MockRepository) List(ctx context.Context, filter repository.ListFilter) ([]*models.CostDataPoint, error) {
 	result := make([]*models.CostDataPoint, 0, len(m.items))
 	for _, item := range m.items {
+		if filter.ID != "" && item.ID != filter.ID {
+			continue
+		}
 		result = append(result, item)
 	}
 	return result, nil

@@ -28,6 +28,9 @@ type CostDataPointRepository interface {
 
 // ListFilter defines filtering options for listing cost data points
 type ListFilter struct {
+	// ID filters by specific cost data point ID
+	ID string
+
 	// Category filters by category (exact match)
 	Category string
 
