@@ -1,0 +1,285 @@
+name: Scraper Validation
+
+on:
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Allow manual triggering
+    inputs:
+      scraper:
+        description: 'Specific scraper to test (bayut, dubizzle, dewa, sewa, aadc, rta, careem, or all)'
+        required: false
+        default: 'all'
+
+env:
+  GO_VERSION: '1.24'
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/scraper_validation_test?sslmode=disable
+
+jobs:
+  validate-bayut:
+    name: Validate Bayut Scraper
+    runs-on: ubuntu-latest
+    if: github.event.inputs.scraper == 'all' || github.event.inputs.scraper == 'bayut' || github.event_name == 'schedule'
+
+    services:
+      postgres:
+        image: timescale/timescaledb:latest-pg15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: scraper_validation_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run database migrations
+        run: go run cmd/migrate/main.go up
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+
+      - name: Validate Bayut scraper
+        id: validate
+        run: |
+          echo "Testing Bayut scraper..."
+          go run cmd/scraper/main.go -scraper bayut -validate
+        continue-on-error: true
+
+      - name: Check validation results
+        run: |
+          if [ ${{ steps.validate.outcome }} == 'failure' ]; then
+            echo "Bayut scraper validation failed"
+            exit 1
+          fi
+          echo "Bayut scraper validation passed"
+
+      - name: Create issue on failure
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '[Automated] Bayut Scraper Validation Failed';
+            const body = `## Scraper Validation Failure
+
+            **Scraper:** Bayut
+            **Date:** ${new Date().toISOString()}
+            **Run:** ${context.payload.repository.html_url}/actions/runs/${context.runId}
+
+            The scheduled validation for the Bayut scraper has failed. This could indicate:
+            - Website structure changes
+            - Network issues
+            - Anti-bot measures
+            - Data quality issues
+
+            Please investigate and fix the issue.
+
+            ---
+            *This issue was automatically created by the scraper validation workflow.*`;
+
+            // Check if similar issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'automated,scraper-failure,bayut'
+            });
+
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['automated', 'scraper-failure', 'bayut', 'needs-investigation']
+              });
+            }
+
+  validate-dubizzle:
+    name: Validate Dubizzle Scraper
+    runs-on: ubuntu-latest
+    if: github.event.inputs.scraper == 'all' || github.event.inputs.scraper == 'dubizzle' || github.event_name == 'schedule'
+
+    services:
+      postgres:
+        image: timescale/timescaledb:latest-pg15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: scraper_validation_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run database migrations
+        run: go run cmd/migrate/main.go up
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+
+      - name: Validate Dubizzle scraper
+        id: validate
+        run: |
+          echo "Testing Dubizzle scraper..."
+          go run cmd/scraper/main.go -scraper dubizzle -validate
+        continue-on-error: true
+
+      - name: Check validation results
+        run: |
+          if [ ${{ steps.validate.outcome }} == 'failure' ]; then
+            echo "Dubizzle scraper validation failed"
+            exit 1
+          fi
+          echo "Dubizzle scraper validation passed"
+
+      - name: Create issue on failure
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '[Automated] Dubizzle Scraper Validation Failed';
+            const body = `## Scraper Validation Failure
+
+            **Scraper:** Dubizzle
+            **Date:** ${new Date().toISOString()}
+            **Run:** ${context.payload.repository.html_url}/actions/runs/${context.runId}
+
+            The scheduled validation for the Dubizzle scraper has failed. This could indicate:
+            - Website structure changes
+            - Network issues
+            - Anti-bot measures
+            - Data quality issues
+
+            Please investigate and fix the issue.
+
+            ---
+            *This issue was automatically created by the scraper validation workflow.*`;
+
+            // Check if similar issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'automated,scraper-failure,dubizzle'
+            });
+
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['automated', 'scraper-failure', 'dubizzle', 'needs-investigation']
+              });
+            }
+
+  data-quality-check:
+    name: Data Quality Validation
+    runs-on: ubuntu-latest
+    needs: [validate-bayut, validate-dubizzle]
+    if: always() && (github.event.inputs.scraper == 'all' || github.event_name == 'schedule')
+
+    services:
+      postgres:
+        image: timescale/timescaledb:latest-pg15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: scraper_validation_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run database migrations
+        run: go run cmd/migrate/main.go up
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+
+      - name: Run data quality checks
+        run: |
+          echo "Running data quality validation..."
+          ./scripts/ci/validate.sh
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+
+      - name: Generate validation report
+        if: always()
+        run: |
+          echo "# Scraper Validation Report" > validation-report.md
+          echo "**Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> validation-report.md
+          echo "" >> validation-report.md
+          echo "## Summary" >> validation-report.md
+          echo "- Bayut: ${{ needs.validate-bayut.result }}" >> validation-report.md
+          echo "- Dubizzle: ${{ needs.validate-dubizzle.result }}" >> validation-report.md
+          echo "" >> validation-report.md
+          cat validation-report.md
+
+      - name: Upload validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-report
+          path: validation-report.md
+          retention-days: 30
+
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [validate-bayut, validate-dubizzle, data-quality-check]
+    if: always() && github.event_name == 'schedule' && (needs.validate-bayut.result == 'failure' || needs.validate-dubizzle.result == 'failure')
+
+    steps:
+      - name: Prepare notification
+        run: |
+          echo "Scraper validation failed. Check GitHub Actions for details."
+          echo "Run URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      # TODO: Add Slack/email notification integration when credentials are available
+      # - name: Send Slack notification
+      #   uses: slackapi/slack-github-action@v1
+      #   with:
+      #     webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+      #     payload: |
+      #       {
+      #         "text": "Scraper validation failed",
+      #         "blocks": [...]
+      #       }

@@ -1,4 +1,4 @@
-.PHONY: run build test test-unit test-repo clean db-up db-down db-logs migrate migrate-down migrate-version temporal-up temporal-down temporal-ui worker run-workflow trigger-scrape trigger-scheduled prom-up prom-down prom-ui scrape-bayut scrape-all e2e-test
+.PHONY: run build test test-unit test-repo test-ci test-integration test-coverage test-bench validate-scrapers lint security-scan clean db-up db-down db-logs migrate migrate-down migrate-version temporal-up temporal-down temporal-ui worker run-workflow trigger-scrape trigger-scheduled prom-up prom-down prom-ui scrape-bayut scrape-all e2e-test ci-setup ci-validate
 
 run:
 	go run cmd/api/main.go
@@ -109,3 +109,60 @@ e2e-test:
 	@kill `cat /tmp/worker.pid` 2>/dev/null || true
 	@rm -f /tmp/worker.pid
 	@echo "E2E test complete!"
+
+# CI/CD targets
+ci-setup: ## Set up CI environment
+	@echo "Setting up CI environment..."
+	@./scripts/ci/setup.sh
+
+test-ci: ## Run full CI test suite
+	@echo "Running CI test suite..."
+	@./scripts/ci/run-tests.sh
+
+test-integration: ## Run integration tests
+	@echo "Running integration tests..."
+	@go test -v -race -timeout 10m -tags=integration ./...
+
+test-coverage: ## Generate coverage report
+	@echo "Generating coverage report..."
+	@./scripts/ci/coverage.sh
+
+test-bench: ## Run benchmark tests
+	@echo "Running benchmarks..."
+	@go test -bench=. -benchmem -run=^$$ ./... | tee benchmarks.txt
+
+validate-scrapers: ## Validate all scrapers
+	@echo "Validating scrapers..."
+	@./scripts/ci/validate.sh
+
+lint: ## Run linters
+	@echo "Running linters..."
+	@go vet ./...
+	@gofmt -l .
+	@which golangci-lint > /dev/null && golangci-lint run || echo "golangci-lint not installed"
+
+security-scan: ## Run security scan
+	@echo "Running security scan..."
+	@which gosec > /dev/null && gosec ./... || echo "gosec not installed, run: go install github.com/securego/gosec/v2/cmd/gosec@latest"
+
+ci-validate: ## Run all CI validation checks
+	@echo "Running CI validation..."
+	@make lint
+	@make security-scan
+	@make test-ci
+	@make test-coverage
+	@make validate-scrapers
+
+# Docker Compose for testing
+test-env-up: ## Start test environment with docker-compose
+	@echo "Starting test environment..."
+	@docker-compose -f docker-compose.test.yml up -d postgres-test
+
+test-env-down: ## Stop test environment
+	@echo "Stopping test environment..."
+	@docker-compose -f docker-compose.test.yml down -v
+
+# Help target
+help: ## Show this help message
+	@echo "Available targets:"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'

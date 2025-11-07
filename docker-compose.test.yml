@@ -1,0 +1,145 @@
+version: '3.8'
+
+# Docker Compose configuration for CI/CD testing
+# This file provides isolated test environments for continuous integration
+
+services:
+  # Test database with TimescaleDB
+  postgres-test:
+    image: timescale/timescaledb:latest-pg15
+    container_name: cost-of-living-test-db
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: cost_of_living_test
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+    ports:
+      - "5433:5432"
+    volumes:
+      - test_postgres_data:/var/lib/postgresql/data
+      - ./test/sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d cost_of_living_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - test-network
+    tmpfs:
+      - /var/lib/postgresql/data:rw,noexec,nosuid,size=512m
+
+  # Temporal test server for workflow testing
+  temporal-test:
+    image: temporalio/auto-setup:1.24.2
+    container_name: cost-of-living-temporal-test
+    environment:
+      - DB=postgresql
+      - DB_PORT=5432
+      - POSTGRES_USER=test_user
+      - POSTGRES_PWD=test_password
+      - POSTGRES_SEEDS=postgres-test
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
+      - SKIP_DB_CREATE=true
+    ports:
+      - "7234:7233"
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "tctl", "--address", "temporal-test:7233", "cluster", "health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  # Test data seeder
+  test-data-seed:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cost-of-living-seed
+    command: ["go", "run", "test/seed/main.go"]
+    environment:
+      DATABASE_URL: postgresql://test_user:test_password@postgres-test:5432/cost_of_living_test?sslmode=disable
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    networks:
+      - test-network
+    profiles:
+      - seed
+
+  # Integration test runner
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cost-of-living-test-runner
+    command: ["make", "test-integration"]
+    environment:
+      DATABASE_URL: postgresql://test_user:test_password@postgres-test:5432/cost_of_living_test?sslmode=disable
+      TEMPORAL_HOST: temporal-test:7233
+      GO_ENV: test
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      temporal-test:
+        condition: service_healthy
+    networks:
+      - test-network
+    volumes:
+      - ./coverage:/app/coverage
+    profiles:
+      - test
+
+  # Mock HTTP server for scraper testing
+  mock-server:
+    image: mockserver/mockserver:latest
+    container_name: cost-of-living-mock-server
+    environment:
+      MOCKSERVER_PROPERTY_FILE: /config/mockserver.properties
+      MOCKSERVER_INITIALIZATION_JSON_PATH: /config/expectations.json
+    ports:
+      - "1080:1080"
+    volumes:
+      - ./test/mocks:/config:ro
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    profiles:
+      - mock
+
+networks:
+  test-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  test_postgres_data:
+    driver: local
+
+# Usage examples:
+#
+# Start test database only:
+#   docker-compose -f docker-compose.test.yml up postgres-test
+#
+# Run full test suite:
+#   docker-compose -f docker-compose.test.yml --profile test up --abort-on-container-exit
+#
+# Run with mock server:
+#   docker-compose -f docker-compose.test.yml --profile mock --profile test up
+#
+# Seed test data:
+#   docker-compose -f docker-compose.test.yml --profile seed up test-data-seed
+#
+# Clean up:
+#   docker-compose -f docker-compose.test.yml down -v
