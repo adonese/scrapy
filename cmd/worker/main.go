@@ -50,10 +50,21 @@ func main() {
 		logger.Info("Registered Bayut scraper", "emirate", emirate)
 	}
 
-	// Register Dubizzle scraper (Dubai only for now)
-	dubizzleScraper := dubizzle.NewDubizzleScraper(scraperConfig)
-	scraperService.RegisterScraper(dubizzleScraper)
-	logger.Info("Registered Dubizzle scraper", "emirate", "Dubai")
+	// Register Dubizzle scrapers for all major emirates
+	for _, emirate := range emirates {
+		dubizzleScraper := dubizzle.NewDubizzleScraperFor(scraperConfig, emirate, "apartmentflat")
+		scraperService.RegisterScraper(dubizzleScraper)
+		logger.Info("Registered Dubizzle scraper", "emirate", emirate, "category", "apartments")
+	}
+
+	// Register shared accommodation scrapers (Dubai focus initially)
+	dubizzleBedspace := dubizzle.NewDubizzleScraperFor(scraperConfig, "Dubai", "bedspace")
+	scraperService.RegisterScraper(dubizzleBedspace)
+	logger.Info("Registered Dubizzle scraper", "emirate", "Dubai", "category", "bedspace")
+
+	dubizzleRoomspace := dubizzle.NewDubizzleScraperFor(scraperConfig, "Dubai", "roomspace")
+	scraperService.RegisterScraper(dubizzleRoomspace)
+	logger.Info("Registered Dubizzle scraper", "emirate", "Dubai", "category", "roomspace")
 
 	// Set activity dependencies
 	workflow.SetActivityDependencies(&workflow.ScraperActivityDependencies{

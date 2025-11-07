@@ -21,12 +21,21 @@ type DubizzleScraper struct {
 	config      scrapers.Config
 	client      *http.Client
 	rateLimiter *rate.Limiter
+	emirate     string // Dubai, Sharjah, Ajman, Abu Dhabi, etc.
+	category    string // apartmentflat, bedspace, roomspace
 }
 
-// NewDubizzleScraper creates a new Dubizzle scraper
+// NewDubizzleScraper creates a new Dubizzle scraper for Dubai apartments (default)
 func NewDubizzleScraper(config scrapers.Config) *DubizzleScraper {
+	return NewDubizzleScraperFor(config, "Dubai", "apartmentflat")
+}
+
+// NewDubizzleScraperFor creates a new Dubizzle scraper for a specific emirate and category
+func NewDubizzleScraperFor(config scrapers.Config, emirate, category string) *DubizzleScraper {
 	return &DubizzleScraper{
-		config: config,
+		config:   config,
+		emirate:  emirate,
+		category: category,
 		client: &http.Client{
 			Timeout: time.Duration(config.Timeout) * time.Second,
 		},
@@ -36,7 +45,14 @@ func NewDubizzleScraper(config scrapers.Config) *DubizzleScraper {
 
 // Name returns the scraper identifier
 func (s *DubizzleScraper) Name() string {
-	return "dubizzle"
+	if s.emirate == "Dubai" && s.category == "apartmentflat" {
+		return "dubizzle" // Maintain backward compatibility
+	}
+	emirateName := strings.ToLower(strings.ReplaceAll(s.emirate, " ", "_"))
+	if s.category == "apartmentflat" {
+		return fmt.Sprintf("dubizzle_%s", emirateName)
+	}
+	return fmt.Sprintf("dubizzle_%s_%s", emirateName, s.category)
 }
 
 // CanScrape checks if scraping is possible (rate limit)
@@ -46,10 +62,11 @@ func (s *DubizzleScraper) CanScrape() bool {
 
 // Scrape fetches housing data from Dubizzle
 func (s *DubizzleScraper) Scrape(ctx context.Context) ([]*models.CostDataPoint, error) {
-	logger.Info("Starting Dubizzle scrape")
+	logger.Info("Starting Dubizzle scrape", "emirate", s.emirate, "category", s.category)
 
-	// Start with apartments for rent in Dubai
-	url := "https://dubai.dubizzle.com/property-for-rent/residential/apartmentflat/"
+	// Build URL for the specific emirate and category
+	url := s.buildURL()
+	logger.Info("Scraping URL", "url", url)
 
 	// Wait for rate limit
 	if err := s.rateLimiter.Wait(ctx); err != nil {
@@ -63,7 +80,7 @@ func (s *DubizzleScraper) Scrape(ctx context.Context) ([]*models.CostDataPoint, 
 	}
 
 	logger.Info("Completed Dubizzle scrape", "count", len(dataPoints))
-	metrics.ScraperItemsScraped.WithLabelValues("dubizzle").Add(float64(len(dataPoints)))
+	metrics.ScraperItemsScraped.WithLabelValues(s.Name()).Add(float64(len(dataPoints)))
 
 	return dataPoints, nil
 }
@@ -192,12 +209,12 @@ func (s *DubizzleScraper) extractListings(doc *goquery.Document, baseURL string)
 
 	for _, selector := range selectors {
 		count := 0
-		doc.Find(selector).Each(func(i int, s *goquery.Selection) {
+		doc.Find(selector).Each(func(i int, selection *goquery.Selection) {
 			if i >= 10 { // Limit to first 10 for initial implementation
 				return
 			}
 
-			cdp := extractListing(s, baseURL)
+			cdp := s.extractListing(selection, baseURL)
 			if cdp != nil {
 				dataPoints = append(dataPoints, cdp)
 				count++
@@ -221,7 +238,7 @@ func (s *DubizzleScraper) extractListings(doc *goquery.Document, baseURL string)
 }
 
 // extractListing extracts a single listing from a goquery selection
-func extractListing(sel *goquery.Selection, baseURL string) *models.CostDataPoint {
+func (scraper *DubizzleScraper) extractListing(sel *goquery.Selection, baseURL string) *models.CostDataPoint {
 	// Extract price - try multiple selectors
 	priceText := ""
 	priceSelectors := []string{
@@ -279,6 +296,13 @@ func extractListing(sel *goquery.Selection, baseURL string) *models.CostDataPoin
 	}
 
 	location := parseLocation(locationText)
+	// Ensure emirate is set correctly
+	if location.Emirate == "" || location.Emirate == "Dubai" {
+		location.Emirate = scraper.emirate
+	}
+	if location.City == "" {
+		location.City = scraper.emirate
+	}
 
 	// Extract property details
 	bedrooms := ""
@@ -325,9 +349,18 @@ func extractListing(sel *goquery.Selection, baseURL string) *models.CostDataPoin
 	}
 
 	now := time.Now()
+
+	// Determine tags based on category
+	tags := []string{"dubizzle", scraper.emirate}
+	if scraper.category == "bedspace" || scraper.category == "roomspace" {
+		tags = append(tags, "shared", "budget", scraper.category)
+	} else {
+		tags = append(tags, "rent", "apartment")
+	}
+
 	return &models.CostDataPoint{
 		Category:    "Housing",
-		SubCategory: "Rent",
+		SubCategory: scraper.getSubCategoryFromCategory(),
 		ItemName:    strings.TrimSpace(title),
 		Price:       price,
 		Location:    location,
@@ -338,7 +371,7 @@ func extractListing(sel *goquery.Selection, baseURL string) *models.CostDataPoin
 		RecordedAt:  now,
 		ValidFrom:   now,
 		SampleSize:  1,
-		Tags:        []string{"rent", "apartment", "dubizzle"},
+		Tags:        tags,
 		Attributes: map[string]interface{}{
 			"bedrooms":  strings.TrimSpace(bedrooms),
 			"bathrooms": strings.TrimSpace(bathrooms),
@@ -392,14 +425,23 @@ func (s *DubizzleScraper) extractWithGeneralApproach(doc *goquery.Document, base
 		}
 
 		now := time.Now()
+
+		// Determine tags based on category
+		tags := []string{"dubizzle", s.emirate}
+		if s.category == "bedspace" || s.category == "roomspace" {
+			tags = append(tags, "shared", "budget", s.category)
+		} else {
+			tags = append(tags, "rent", "apartment")
+		}
+
 		dataPoints = append(dataPoints, &models.CostDataPoint{
 			Category:    "Housing",
-			SubCategory: "Rent",
+			SubCategory: s.getSubCategoryFromCategory(),
 			ItemName:    title,
 			Price:       price,
 			Location: models.Location{
-				Emirate: "Dubai",
-				City:    "Dubai",
+				Emirate: s.emirate,
+				City:    s.emirate,
 			},
 			Source:      "dubizzle",
 			SourceURL:   propertyURL,
@@ -408,10 +450,62 @@ func (s *DubizzleScraper) extractWithGeneralApproach(doc *goquery.Document, base
 			RecordedAt:  now,
 			ValidFrom:   now,
 			SampleSize:  1,
-			Tags:        []string{"rent", "apartment", "dubizzle"},
+			Tags:        tags,
 			Attributes:  map[string]interface{}{},
 		})
 	})
 
 	return dataPoints
+}
+
+// buildURL constructs the Dubizzle URL for the emirate and category
+func (s *DubizzleScraper) buildURL() string {
+	emiratePath := s.emirateToSubdomain(s.emirate)
+	categoryPath := s.categoryToPath(s.category)
+	return fmt.Sprintf("https://%s.dubizzle.com/property-for-rent/residential/%s/", emiratePath, categoryPath)
+}
+
+// emirateToSubdomain converts emirate name to Dubizzle subdomain format
+func (s *DubizzleScraper) emirateToSubdomain(emirate string) string {
+	// Dubizzle subdomain patterns:
+	// Dubai -> dubai
+	// Abu Dhabi -> abudhabi
+	// Sharjah -> sharjah
+	// Ajman -> ajman
+	// Ras Al Khaimah -> rak
+	// Fujairah -> fujairah
+	// Umm Al Quwain -> uaq
+
+	emirate = strings.ToLower(emirate)
+	emirate = strings.ReplaceAll(emirate, " ", "")
+
+	// Handle special cases
+	if strings.Contains(emirate, "rasalkhaimah") || strings.Contains(emirate, "rak") {
+		return "rak"
+	}
+	if strings.Contains(emirate, "ummalquwain") || strings.Contains(emirate, "uaq") {
+		return "uaq"
+	}
+
+	return emirate
+}
+
+// categoryToPath converts category to Dubizzle URL path
+func (s *DubizzleScraper) categoryToPath(category string) string {
+	// Category patterns:
+	// apartmentflat -> apartmentflat
+	// bedspace -> bedspace
+	// roomspace -> roomspace
+
+	return category
+}
+
+// getSubCategoryFromCategory returns the subcategory based on the category
+func (s *DubizzleScraper) getSubCategoryFromCategory() string {
+	switch s.category {
+	case "bedspace", "roomspace":
+		return "Shared Accommodation"
+	default:
+		return "Rent"
+	}
 }

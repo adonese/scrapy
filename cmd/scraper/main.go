@@ -65,11 +65,23 @@ func main() {
 		}
 	}
 
-	// Register Dubizzle scrapers (still only Dubai for now)
+	// Register Dubizzle scrapers for requested emirates
 	if *scraperName == "dubizzle" || *scraperName == "all" {
-		dubizzleScraper := dubizzle.NewDubizzleScraper(scraperConfig)
-		service.RegisterScraper(dubizzleScraper)
-		logger.Info("Registered Dubizzle scraper", "emirate", "Dubai")
+		// Regular apartments
+		for _, em := range emirates {
+			dubizzleScraper := dubizzle.NewDubizzleScraperFor(scraperConfig, em, "apartmentflat")
+			service.RegisterScraper(dubizzleScraper)
+			logger.Info("Registered Dubizzle scraper", "emirate", em, "category", "apartments")
+		}
+
+		// Shared accommodations (bedspace and roomspace) - Dubai only initially
+		dubizzleBedspace := dubizzle.NewDubizzleScraperFor(scraperConfig, "Dubai", "bedspace")
+		service.RegisterScraper(dubizzleBedspace)
+		logger.Info("Registered Dubizzle scraper", "emirate", "Dubai", "category", "bedspace")
+
+		dubizzleRoomspace := dubizzle.NewDubizzleScraperFor(scraperConfig, "Dubai", "roomspace")
+		service.RegisterScraper(dubizzleRoomspace)
+		logger.Info("Registered Dubizzle scraper", "emirate", "Dubai", "category", "roomspace")
 	}
 
 	logger.Info("Registered scrapers", "count", len(service.ListScrapers()))
