@@ -1,0 +1,110 @@
+package core
+
+import (
+	"fmt"
+)
+
+type TextareaProps struct {
+	Name        string
+	ID          string
+	Value       string
+	Placeholder string
+	Rows        int
+	Disabled    bool
+	Required    bool
+	Class       string            // additional classes
+	HxAttrs     map[string]string // HTMX attributes
+	AlpineData  string            // Alpine.js x-data
+	AriaLabel   string
+	MaxLength   int
+}
+
+func getTextareaClasses(props TextareaProps) string {
+	baseClasses := "flex min-h-[80px] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y transition-colors"
+
+	if props.Class != "" {
+		return baseClasses + " " + props.Class
+	}
+	return baseClasses
+}
+
+templ Textarea(props TextareaProps) {
+	<textarea
+		if props.Name != "" {
+			name={ props.Name }
+		}
+		if props.ID != "" {
+			id={ props.ID }
+		}
+		if props.Placeholder != "" {
+			placeholder={ props.Placeholder }
+		}
+		if props.Rows > 0 {
+			rows={ fmt.Sprintf("%d", props.Rows) }
+		}
+		class={ getTextareaClasses(props) }
+		if props.Disabled {
+			disabled
+		}
+		if props.Required {
+			required
+		}
+		if props.AriaLabel != "" {
+			aria-label={ props.AriaLabel }
+		}
+		if props.AlpineData != "" {
+			x-data={ props.AlpineData }
+		}
+		if props.MaxLength > 0 {
+			maxlength={ fmt.Sprintf("%d", props.MaxLength) }
+		}
+	>{ props.Value }</textarea>
+}
+
+type TextareaGroupProps struct {
+	Label         string
+	LabelFor      string
+	Error         string
+	Hint          string
+	Required      bool
+	ShowCounter   bool
+	Class         string
+	TextareaProps TextareaProps
+}
+
+templ TextareaGroup(props TextareaGroupProps) {
+	<div class={ "space-y-2 " + props.Class }>
+		if props.Label != "" {
+			<div class="flex items-center justify-between">
+				<label
+					if props.LabelFor != "" {
+						for={ props.LabelFor }
+					}
+					class="text-sm font-medium text-slate-900"
+				>
+					{ props.Label }
+					if props.Required {
+						<span class="text-red-600">*</span>
+					}
+				</label>
+				if props.ShowCounter && props.TextareaProps.MaxLength > 0 {
+					<span
+						class="text-xs text-slate-500"
+						if props.TextareaProps.AlpineData != "" {
+							x-text={ "`${$el.closest('div').querySelector('textarea').value.length}/" + templ.EscapeString(string(rune(props.TextareaProps.MaxLength))) + "`" }
+						}
+					>
+						0/{ templ.EscapeString(string(rune(props.TextareaProps.MaxLength))) }
+					</span>
+				}
+			</div>
+		}
+		@Textarea(props.TextareaProps)
+		if props.Hint != "" && props.Error == "" {
+			<p class="text-xs text-slate-500">{ props.Hint }</p>
+		}
+		if props.Error != "" {
+			<p class="text-xs text-red-600" role="alert">{ props.Error }</p>
+		}
+	</div>
+}

@@ -1,0 +1,191 @@
+package data
+
+import (
+	"fmt"
+)
+
+type Column struct {
+	Key      string
+	Label    string
+	Sortable bool
+	Width    string
+}
+
+type DataTableConfig struct {
+	ID                string
+	Columns           []Column
+	Data              []map[string]interface{}
+	CurrentPage       int
+	TotalPages        int
+	TotalRecords      int
+	PageSize          int
+	SearchQuery       string
+	SortColumn        string
+	SortDirection     string
+	SearchPlaceholder string
+	EmptyMessage      string
+	BaseURL           string // Base URL for HTMX requests
+}
+
+// DataTable creates a responsive data table with HTMX-powered sorting, filtering, and pagination
+templ DataTable(config DataTableConfig) {
+	<div class="data-table-wrapper" id={ config.ID }>
+		<!-- Toolbar -->
+		<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+			<!-- Search -->
+			<div class="relative flex-1 max-w-md">
+				<input
+					type="text"
+					name="search"
+					value={ config.SearchQuery }
+					placeholder={ config.SearchPlaceholder }
+					hx-get={ config.BaseURL }
+					hx-trigger="keyup changed delay:500ms"
+					hx-target={ fmt.Sprintf("#%s", config.ID) }
+					hx-swap="outerHTML"
+					hx-include="[name='sort_by'],[name='sort_dir']"
+					class="w-full rounded-lg border border-slate-300 px-4 py-2 pl-10 text-sm focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+				/>
+				<input type="hidden" name="sort_by" value={ config.SortColumn }/>
+				<input type="hidden" name="sort_dir" value={ config.SortDirection }/>
+				<svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+				</svg>
+				<div class="htmx-indicator absolute right-3 top-1/2 -translate-y-1/2">
+					<svg class="animate-spin h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
+						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+					</svg>
+				</div>
+			</div>
+			<!-- Results Info -->
+			<div class="text-sm text-slate-600">
+				if config.TotalRecords > 0 {
+					<span class="font-medium text-slate-900">{ fmt.Sprintf("%d", config.TotalRecords) }</span>
+					results
+				}
+			</div>
+		</div>
+
+		<!-- Table Container - Responsive -->
+		<div class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+			<!-- Desktop Table View -->
+			<table class="hidden sm:table w-full">
+				<thead class="bg-slate-50 border-b border-slate-200">
+					<tr>
+						for _, col := range config.Columns {
+							<th
+								if col.Width != "" {
+									style={ fmt.Sprintf("width: %s", col.Width) }
+								}
+								class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+							>
+								<div class="flex items-center gap-2">
+									<span>{ col.Label }</span>
+									if col.Sortable {
+										<button
+											hx-get={ config.BaseURL }
+											hx-vals={ fmt.Sprintf(`{"sort_by": "%s", "sort_dir": "%s"}`, col.Key, toggleSortDirection(config.SortColumn, col.Key, config.SortDirection)) }
+											hx-target={ fmt.Sprintf("#%s", config.ID) }
+											hx-swap="outerHTML"
+											hx-include="[name='search']"
+											class="focus:outline-none"
+										>
+											<svg
+												class={ fmt.Sprintf("h-4 w-4 %s", getSortIconClass(config.SortColumn, col.Key, config.SortDirection)) }
+												fill="none"
+												stroke="currentColor"
+												viewBox="0 0 24 24"
+											>
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+											</svg>
+										</button>
+									}
+								</div>
+							</th>
+						}
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-slate-200">
+					if len(config.Data) > 0 {
+						for _, row := range config.Data {
+							<tr class="hover:bg-slate-50 transition-colors">
+								for _, col := range config.Columns {
+									<td class="px-4 py-3 text-sm text-slate-900">
+										{ fmt.Sprintf("%v", row[col.Key]) }
+									</td>
+								}
+							</tr>
+						}
+					} else {
+						<tr>
+							<td colspan={ fmt.Sprintf("%d", len(config.Columns)) } class="px-4 py-12 text-center text-slate-500">
+								<svg class="mx-auto h-12 w-12 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+								</svg>
+								<p class="text-sm">{ config.EmptyMessage }</p>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+
+			<!-- Mobile Card View -->
+			<div class="sm:hidden divide-y divide-slate-200">
+				if len(config.Data) > 0 {
+					for _, row := range config.Data {
+						<div class="p-4 space-y-2">
+							for _, col := range config.Columns {
+								<div class="flex justify-between items-start gap-4">
+									<span class="text-xs font-semibold text-slate-600 uppercase tracking-wider">{ col.Label }</span>
+									<span class="text-sm text-slate-900 text-right">{ fmt.Sprintf("%v", row[col.Key]) }</span>
+								</div>
+							}
+						</div>
+					}
+				} else {
+					<div class="p-12 text-center text-slate-500">
+						<svg class="mx-auto h-12 w-12 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+						</svg>
+						<p class="text-sm">{ config.EmptyMessage }</p>
+					</div>
+				}
+			</div>
+		</div>
+
+		<!-- Pagination -->
+		if config.TotalPages > 1 {
+			@Pagination(PaginationConfig{
+				CurrentPage:  config.CurrentPage,
+				TotalPages:   config.TotalPages,
+				TotalRecords: config.TotalRecords,
+				PageSize:     config.PageSize,
+				BaseURL:      config.BaseURL,
+				TargetID:     config.ID,
+			})
+		}
+	</div>
+}
+
+// Helper function to toggle sort direction
+func toggleSortDirection(currentSortCol, clickedCol, currentDir string) string {
+	if currentSortCol == clickedCol {
+		if currentDir == "asc" {
+			return "desc"
+		}
+		return "asc"
+	}
+	return "asc"
+}
+
+// Helper function to get sort icon class
+func getSortIconClass(currentSortCol, col, direction string) string {
+	if currentSortCol != col {
+		return "text-slate-400 hover:text-slate-600"
+	}
+	if direction == "desc" {
+		return "text-slate-900 transform rotate-180"
+	}
+	return "text-slate-900"
+}

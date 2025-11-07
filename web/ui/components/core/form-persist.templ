@@ -1,0 +1,238 @@
+package core
+
+// FormPersist provides Alpine.js patterns for automatic form persistence
+// This file contains example templates that demonstrate how to add
+// localStorage persistence to forms with debounced auto-save
+
+// USAGE PATTERN 1: Simple form with auto-save
+// Copy this x-data pattern into any form element:
+//
+// <form
+//   x-data="{
+//     formData: JSON.parse(localStorage.getItem('myFormKey') || '{}'),
+//     saveForm() {
+//       localStorage.setItem('myFormKey', JSON.stringify(this.formData));
+//     },
+//     clearForm() {
+//       localStorage.removeItem('myFormKey');
+//       this.formData = {};
+//     }
+//   }"
+//   @submit="clearForm()"
+// >
+//   <input x-model="formData.name" @input.debounce.500ms="saveForm()" />
+// </form>
+
+templ FormPersistExample() {
+	<div class="space-y-6">
+		<h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Form Persistence Example</h3>
+		<form
+			x-data="{
+				formData: JSON.parse(localStorage.getItem('exampleForm') || '{&quot;name&quot;:&quot;&quot;,&quot;email&quot;:&quot;&quot;,&quot;message&quot;:&quot;&quot;}'),
+				lastSaved: localStorage.getItem('exampleForm_timestamp') || null,
+				saveForm() {
+					localStorage.setItem('exampleForm', JSON.stringify(this.formData));
+					localStorage.setItem('exampleForm_timestamp', new Date().toISOString());
+					this.lastSaved = new Date().toISOString();
+				},
+				clearForm() {
+					localStorage.removeItem('exampleForm');
+					localStorage.removeItem('exampleForm_timestamp');
+					this.formData = {name: '', email: '', message: ''};
+					this.lastSaved = null;
+				},
+				restoreForm() {
+					const saved = localStorage.getItem('exampleForm');
+					if (saved) {
+						this.formData = JSON.parse(saved);
+						this.lastSaved = localStorage.getItem('exampleForm_timestamp');
+					}
+				}
+			}"
+			x-init="restoreForm()"
+			@submit.prevent="console.log('Form submitted:', formData); clearForm()"
+			class="space-y-4 p-6 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"
+		>
+			<!-- Auto-save indicator -->
+			<div x-show="lastSaved" x-cloak class="text-xs text-slate-500 dark:text-slate-400">
+				<span>Last saved: </span>
+				<span x-text="lastSaved ? new Date(lastSaved).toLocaleString() : 'Never'"></span>
+			</div>
+			<div>
+				<label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">Name</label>
+				<input
+					type="text"
+					x-model="formData.name"
+					@input.debounce.500ms="saveForm()"
+					placeholder="Your name"
+					class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+				/>
+			</div>
+			<div>
+				<label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">Email</label>
+				<input
+					type="email"
+					x-model="formData.email"
+					@input.debounce.500ms="saveForm()"
+					placeholder="your@email.com"
+					class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+				/>
+			</div>
+			<div>
+				<label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">Message</label>
+				<textarea
+					x-model="formData.message"
+					@input.debounce.500ms="saveForm()"
+					placeholder="Your message..."
+					rows="4"
+					class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+				></textarea>
+			</div>
+			<div class="flex gap-3">
+				<button
+					type="submit"
+					class="px-4 py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-md hover:bg-slate-800 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
+				>
+					Submit
+				</button>
+				<button
+					type="button"
+					@click="clearForm()"
+					class="px-4 py-2 bg-slate-200 dark:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-md hover:bg-slate-300 dark:hover:bg-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
+				>
+					Clear
+				</button>
+			</div>
+		</form>
+	</div>
+}
+
+// USAGE PATTERN 2: Inline pattern (copy this into your templ)
+//
+// For a simple input with persistence:
+// <input
+//   x-data="{ value: localStorage.getItem('myKey') || '' }"
+//   x-model="value"
+//   @input.debounce.500ms="localStorage.setItem('myKey', value)"
+// />
+
+templ FormPersistInlineExample() {
+	<div class="space-y-4">
+		<h4 class="text-md font-semibold text-slate-900 dark:text-slate-100">Inline Persistence Pattern</h4>
+		<div>
+			<label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">Single Field with Persistence</label>
+			<input
+				type="text"
+				x-data="{ value: localStorage.getItem('singleField') || '' }"
+				x-model="value"
+				@input.debounce.500ms="localStorage.setItem('singleField', value)"
+				placeholder="Type something... (auto-saves)"
+				class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+			/>
+		</div>
+	</div>
+}
+
+// USAGE PATTERN 3: Multi-step form with persistence
+// This pattern is useful for wizards or multi-page forms
+templ FormPersistMultiStepExample() {
+	<div
+		x-data="{
+			currentStep: parseInt(localStorage.getItem('formStep') || '1'),
+			formData: JSON.parse(localStorage.getItem('multiStepForm') || '{&quot;step1&quot;:{},&quot;step2&quot;:{},&quot;step3&quot;:{}}'),
+			saveStep() {
+				localStorage.setItem('multiStepForm', JSON.stringify(this.formData));
+				localStorage.setItem('formStep', this.currentStep.toString());
+			},
+			nextStep() {
+				this.saveStep();
+				if (this.currentStep < 3) this.currentStep++;
+			},
+			prevStep() {
+				if (this.currentStep > 1) this.currentStep--;
+			},
+			resetForm() {
+				localStorage.removeItem('multiStepForm');
+				localStorage.removeItem('formStep');
+				this.currentStep = 1;
+				this.formData = {step1: {}, step2: {}, step3: {}};
+			}
+		}"
+		class="space-y-4 p-6 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"
+	>
+		<h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Multi-Step Form Example</h3>
+		<!-- Progress indicator -->
+		<div class="flex items-center gap-2">
+			<div
+				class="h-2 flex-1 rounded-full"
+				:class="currentStep >= 1 ? 'bg-slate-900 dark:bg-slate-600' : 'bg-slate-200 dark:bg-slate-700'"
+			></div>
+			<div
+				class="h-2 flex-1 rounded-full"
+				:class="currentStep >= 2 ? 'bg-slate-900 dark:bg-slate-600' : 'bg-slate-200 dark:bg-slate-700'"
+			></div>
+			<div
+				class="h-2 flex-1 rounded-full"
+				:class="currentStep >= 3 ? 'bg-slate-900 dark:bg-slate-600' : 'bg-slate-200 dark:bg-slate-700'"
+			></div>
+		</div>
+		<!-- Step 1 -->
+		<div x-show="currentStep === 1" x-cloak>
+			<h4 class="text-md font-medium text-slate-900 dark:text-slate-100 mb-4">Step 1: Personal Info</h4>
+			<input
+				type="text"
+				x-model="formData.step1.name"
+				@input.debounce.500ms="saveStep()"
+				placeholder="Name"
+				class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+			/>
+		</div>
+		<!-- Step 2 -->
+		<div x-show="currentStep === 2" x-cloak>
+			<h4 class="text-md font-medium text-slate-900 dark:text-slate-100 mb-4">Step 2: Contact Info</h4>
+			<input
+				type="email"
+				x-model="formData.step2.email"
+				@input.debounce.500ms="saveStep()"
+				placeholder="Email"
+				class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+			/>
+		</div>
+		<!-- Step 3 -->
+		<div x-show="currentStep === 3" x-cloak>
+			<h4 class="text-md font-medium text-slate-900 dark:text-slate-100 mb-4">Step 3: Review</h4>
+			<div class="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+				<p>Name: <span x-text="formData.step1.name || 'Not set'"></span></p>
+				<p>Email: <span x-text="formData.step2.email || 'Not set'"></span></p>
+			</div>
+		</div>
+		<!-- Navigation -->
+		<div class="flex justify-between pt-4">
+			<button
+				@click="prevStep()"
+				x-show="currentStep > 1"
+				type="button"
+				class="px-4 py-2 bg-slate-200 dark:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-md hover:bg-slate-300 dark:hover:bg-slate-500"
+			>
+				Previous
+			</button>
+			<div x-show="currentStep === 1"></div>
+			<button
+				@click="nextStep()"
+				x-show="currentStep < 3"
+				type="button"
+				class="px-4 py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-md hover:bg-slate-800 dark:hover:bg-slate-600"
+			>
+				Next
+			</button>
+			<button
+				@click="resetForm()"
+				x-show="currentStep === 3"
+				type="button"
+				class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+			>
+				Submit & Reset
+			</button>
+		</div>
+	</div>
+}

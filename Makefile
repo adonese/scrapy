@@ -1,9 +1,62 @@
-.PHONY: run build templ test test-unit test-repo test-ci test-integration test-coverage test-bench validate-scrapers lint security-scan clean db-up db-down db-logs migrate migrate-down migrate-version temporal-up temporal-down temporal-ui worker run-workflow trigger-scrape trigger-scheduled prom-up prom-down prom-ui scrape-bayut scrape-all e2e-test ci-setup ci-validate
+.PHONY: run build templ test test-unit test-repo test-ci test-integration test-coverage test-bench validate-scrapers lint security-scan clean db-up db-down db-logs migrate migrate-down migrate-version temporal-up temporal-down temporal-ui worker run-workflow trigger-scrape trigger-scheduled prom-up prom-down prom-ui scrape-bayut scrape-all e2e-test ci-setup ci-validate css css-build css-watch install-tailwind dev
 
 TEMPL_VERSION ?= v0.3.960
 
 templ:
 	go run github.com/a-h/templ/cmd/templ@$(TEMPL_VERSION) generate
+
+# CSS/Frontend commands
+install-tailwind: ## Download and install Tailwind CSS standalone CLI
+	@echo "Installing Tailwind CSS standalone CLI..."
+	@if [ "$$(uname -s)" = "Linux" ]; then \
+		if [ "$$(uname -m)" = "x86_64" ]; then \
+			curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64; \
+			chmod +x tailwindcss-linux-x64; \
+			sudo mv tailwindcss-linux-x64 /usr/local/bin/tailwindcss; \
+		elif [ "$$(uname -m)" = "aarch64" ]; then \
+			curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-arm64; \
+			chmod +x tailwindcss-linux-arm64; \
+			sudo mv tailwindcss-linux-arm64 /usr/local/bin/tailwindcss; \
+		else \
+			echo "Unsupported architecture: $$(uname -m)"; exit 1; \
+		fi \
+	elif [ "$$(uname -s)" = "Darwin" ]; then \
+		if [ "$$(uname -m)" = "arm64" ]; then \
+			curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-macos-arm64; \
+			chmod +x tailwindcss-macos-arm64; \
+			sudo mv tailwindcss-macos-arm64 /usr/local/bin/tailwindcss; \
+		else \
+			curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-macos-x64; \
+			chmod +x tailwindcss-macos-x64; \
+			sudo mv tailwindcss-macos-x64 /usr/local/bin/tailwindcss; \
+		fi \
+	else \
+		echo "Unsupported OS. Please download manually from:"; \
+		echo "https://github.com/tailwindlabs/tailwindcss/releases/latest"; \
+		exit 1; \
+	fi
+	@echo "✓ Tailwind CSS CLI installed successfully!"
+	@tailwindcss --help > /dev/null && echo "✓ Verification successful"
+
+css: css-build ## Build CSS (alias for css-build)
+
+css-build: ## Build Tailwind CSS once
+	@echo "Building Tailwind CSS..."
+	@tailwindcss -i ./web/static/css/input.css -o ./web/static/css/output.css --minify
+	@echo "✓ CSS built successfully"
+
+css-watch: ## Build Tailwind CSS in watch mode for development
+	@echo "Starting Tailwind CSS in watch mode..."
+	@tailwindcss -i ./web/static/css/input.css -o ./web/static/css/output.css --watch
+
+dev: ## Start development mode (run templ generate, css watch, and show instructions)
+	@echo "🚀 Development environment setup:"
+	@echo ""
+	@echo "Terminal 1: make css-watch"
+	@echo "Terminal 2: make run"
+	@echo ""
+	@echo "Starting CSS watch mode now..."
+	@make css-watch
 
 run: templ
 	go run cmd/api/main.go

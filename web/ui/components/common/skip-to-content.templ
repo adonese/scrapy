@@ -1,0 +1,33 @@
+package common
+
+// SkipToContent provides a "Skip to main content" link for keyboard users
+// Improves accessibility by allowing users to bypass navigation
+// Only visible when focused via keyboard (Tab key)
+templ SkipToContent() {
+	<a
+		href="#main-content"
+		class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-slate-900 focus:text-white focus:rounded-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-all"
+		aria-label="Skip to main content"
+	>
+		Skip to main content
+	</a>
+}
+
+// ScreenReaderOnly renders content that is only visible to screen readers
+// Use for providing additional context to assistive technologies
+templ ScreenReaderOnly(text string) {
+	<span class="sr-only">{ text }</span>
+}
+
+// LiveRegion creates an ARIA live region for dynamic content announcements
+// polite: waits for user to pause before announcing
+// assertive: interrupts user immediately
+templ LiveRegion(id string, politeness string) {
+	<div
+		id={ id }
+		role="status"
+		aria-live={ politeness }
+		aria-atomic="true"
+		class="sr-only"
+	></div>
+}

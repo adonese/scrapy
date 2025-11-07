@@ -1,0 +1,103 @@
+package navigation
+
+// NavbarCompleteProps defines comprehensive navbar properties
+type NavbarCompleteProps struct {
+	LogoText    string
+	Subtitle    string
+	NavLinks    []NavLink
+	ShowStatus  bool
+	StatusText  string
+	StatusColor string // green, blue, red, yellow
+}
+
+// NavbarComplete renders a fully responsive navigation bar with theme toggle
+// Desktop: full navigation visible with all links
+// Mobile: hamburger menu icon with slide-out drawer
+// Features: sticky header, theme toggle, accessible keyboard navigation
+templ NavbarComplete(props NavbarCompleteProps) {
+	<header
+		class="border-b border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md sticky top-0 z-40"
+		role="banner"
+	>
+		<div class="container mx-auto px-4">
+			<div class="flex items-center justify-between py-4">
+				<!-- Logo / Branding -->
+				<div class="flex items-center gap-3">
+					<a
+						href="/"
+						class="flex items-center gap-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 rounded-lg transition-all"
+						aria-label={ props.LogoText + " - Go to home" }
+					>
+						<div class="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white flex items-center justify-center font-bold text-xl shadow-md" aria-hidden="true">
+							if len(props.LogoText) > 0 {
+								{ props.LogoText[:1] }
+							}
+						</div>
+						<div>
+							if props.Subtitle != "" {
+								<p class="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">{ props.Subtitle }</p>
+							}
+							<p class="text-lg font-bold tracking-tight text-slate-900 dark:text-white">{ props.LogoText }</p>
+						</div>
+					</a>
+				</div>
+
+				<!-- Desktop Navigation -->
+				<nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600 dark:text-slate-300" role="navigation" aria-label="Primary navigation">
+					for _, link := range props.NavLinks {
+						<a
+							href={ templ.URL(link.Href) }
+							class="hover:text-slate-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 rounded px-3 py-2 transition-colors"
+							aria-label={ link.Label }
+						>
+							{ link.Text }
+						</a>
+					}
+				</nav>
+
+				<!-- Actions: Theme Toggle + Status + Mobile Menu -->
+				<div class="flex items-center gap-3">
+					<!-- Status Badge (hidden on mobile) -->
+					if props.ShowStatus {
+						<div class="hidden sm:flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500" role="status" aria-label={ "Status: " + props.StatusText }>
+							<div
+								class={ "h-2 w-2 rounded-full animate-pulse",
+									templ.KV("bg-green-500", props.StatusColor == "green"),
+									templ.KV("bg-blue-500", props.StatusColor == "blue"),
+									templ.KV("bg-red-500", props.StatusColor == "red"),
+									templ.KV("bg-yellow-500", props.StatusColor == "yellow"),
+								}
+								aria-hidden="true"
+							></div>
+							<span>{ props.StatusText }</span>
+						</div>
+					}
+
+					<!-- Theme Toggle Button -->
+					<button
+						x-data="{ dark: localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches) }"
+						x-init="dark ? document.documentElement.classList.add('dark') : document.documentElement.classList.remove('dark')"
+						@click="dark = !dark; dark ? document.documentElement.classList.add('dark') : document.documentElement.classList.remove('dark'); localStorage.setItem('theme', dark ? 'dark' : 'light')"
+						type="button"
+						class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+						aria-label="Toggle dark mode"
+					>
+						<!-- Sun icon (light mode) -->
+						<svg x-show="!dark" class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+						</svg>
+						<!-- Moon icon (dark mode) -->
+						<svg x-show="dark" x-cloak class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+						</svg>
+					</button>
+
+					<!-- Mobile Navigation Toggle -->
+					<div class="md:hidden">
+						@MobileMenuComplete(props.NavLinks, props.LogoText, props.Subtitle)
+					</div>
+				</div>
+			</div>
+		</div>
+	</header>
+}

@@ -1,0 +1,85 @@
+package core
+
+type CardProps struct {
+	Variant    string            // default, bordered, elevated
+	Class      string            // additional classes
+	HxAttrs    map[string]string // HTMX attributes
+	AlpineData string            // Alpine.js x-data
+	AriaLabel  string
+}
+
+func getCardClasses(props CardProps) string {
+	baseClasses := "rounded-lg bg-white dark:bg-slate-800 transition-colors"
+
+	// Variant classes
+	var variantClasses string
+	switch props.Variant {
+	case "bordered":
+		variantClasses = "border border-slate-200 dark:border-slate-700"
+	case "elevated":
+		variantClasses = "shadow-lg dark:shadow-slate-900/50"
+	default: // default
+		variantClasses = "border border-slate-200 dark:border-slate-700 shadow-sm"
+	}
+
+	classes := baseClasses + " " + variantClasses
+	if props.Class != "" {
+		classes += " " + props.Class
+	}
+	return classes
+}
+
+templ Card(props CardProps, content templ.Component) {
+	<div
+		class={ getCardClasses(props) }
+		if props.AriaLabel != "" {
+			aria-label={ props.AriaLabel }
+		}
+		if props.AlpineData != "" {
+			x-data={ props.AlpineData }
+		}
+	>
+		@content
+	</div>
+}
+
+type CardHeaderProps struct {
+	Title       string
+	Description string
+	Class       string
+}
+
+templ CardHeader(props CardHeaderProps) {
+	<div class={ "flex flex-col space-y-1.5 p-6 " + props.Class }>
+		if props.Title != "" {
+			<h3 class="text-lg font-semibold leading-none tracking-tight text-slate-900 dark:text-slate-100">
+				{ props.Title }
+			</h3>
+		}
+		if props.Description != "" {
+			<p class="text-sm text-slate-500 dark:text-slate-400">
+				{ props.Description }
+			</p>
+		}
+	</div>
+}
+
+type CardContentProps struct {
+	Class string
+}
+
+templ CardContent(props CardContentProps, content templ.Component) {
+	<div class={ "p-6 pt-0 " + props.Class }>
+		@content
+	</div>
+}
+
+type CardFooterProps struct {
+	Class string
+}
+
+templ CardFooter(props CardFooterProps, content templ.Component) {
+	<div class={ "flex items-center p-6 pt-0 " + props.Class }>
+		@content
+	</div>
+}

@@ -1,0 +1,196 @@
+package data
+
+import (
+	"fmt"
+)
+
+type PaginationConfig struct {
+	CurrentPage  int
+	TotalPages   int
+	TotalRecords int
+	PageSize     int
+	BaseURL      string
+	TargetID     string
+	ShowInfo     bool // Show "Showing X to Y of Z results"
+	MaxButtons   int  // Max page buttons to show (default: 7)
+}
+
+// Pagination creates HTMX-powered pagination controls
+templ Pagination(config PaginationConfig) {
+	<div class="pagination mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+		<!-- Results Info -->
+		if config.ShowInfo || config.ShowInfo == false && config.TotalRecords > 0 {
+			<div class="text-sm text-slate-600">
+				Showing
+				<span class="font-medium text-slate-900">{ fmt.Sprintf("%d", getStartRecord(config.CurrentPage, config.PageSize)) }</span>
+				to
+				<span class="font-medium text-slate-900">{ fmt.Sprintf("%d", getEndRecord(config.CurrentPage, config.PageSize, config.TotalRecords)) }</span>
+				of
+				<span class="font-medium text-slate-900">{ fmt.Sprintf("%d", config.TotalRecords) }</span>
+				results
+			</div>
+		}
+
+		<!-- Pagination Controls -->
+		<div class="flex items-center gap-2">
+			<!-- Previous Button -->
+			<button
+				if config.CurrentPage > 1 {
+					hx-get={ fmt.Sprintf("%s?page=%d", config.BaseURL, config.CurrentPage-1) }
+					hx-target={ fmt.Sprintf("#%s", config.TargetID) }
+					hx-swap="outerHTML"
+					hx-include="[name='search'],[name='sort_by'],[name='sort_dir']"
+					class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200"
+				} else {
+					disabled
+					class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 opacity-50 cursor-not-allowed"
+				}
+			>
+				Previous
+			</button>
+
+			<!-- Page Numbers (Desktop) -->
+			<div class="hidden sm:flex items-center gap-1">
+				@renderPageButtons(config)
+			</div>
+
+			<!-- Current Page Info (Mobile) -->
+			<div class="sm:hidden px-3 py-2 text-sm text-slate-700">
+				<span class="font-medium">{ fmt.Sprintf("%d", config.CurrentPage) }</span>
+				<span class="text-slate-500"> / </span>
+				<span class="font-medium">{ fmt.Sprintf("%d", config.TotalPages) }</span>
+			</div>
+
+			<!-- Next Button -->
+			<button
+				if config.CurrentPage < config.TotalPages {
+					hx-get={ fmt.Sprintf("%s?page=%d", config.BaseURL, config.CurrentPage+1) }
+					hx-target={ fmt.Sprintf("#%s", config.TargetID) }
+					hx-swap="outerHTML"
+					hx-include="[name='search'],[name='sort_by'],[name='sort_dir']"
+					class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200"
+				} else {
+					disabled
+					class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 opacity-50 cursor-not-allowed"
+				}
+			>
+				Next
+			</button>
+		</div>
+	</div>
+}
+
+// Helper function to render page buttons
+templ renderPageButtons(config PaginationConfig) {
+	@renderPageButtonsWithRange(config, getPageRange(config))
+}
+
+templ renderPageButtonsWithRange(config PaginationConfig, pages pageRange) {
+	// First page
+	if pages.showFirst {
+		@pageButton(1, config.CurrentPage, config.BaseURL, config.TargetID)
+	}
+	// Left ellipsis
+	if pages.showLeftEllipsis {
+		<span class="px-2 text-slate-400">...</span>
+	}
+	// Middle pages
+	for page := pages.start; page <= pages.end; page++ {
+		@pageButton(page, config.CurrentPage, config.BaseURL, config.TargetID)
+	}
+	// Right ellipsis
+	if pages.showRightEllipsis {
+		<span class="px-2 text-slate-400">...</span>
+	}
+	// Last page
+	if pages.showLast {
+		@pageButton(config.TotalPages, config.CurrentPage, config.BaseURL, config.TargetID)
+	}
+}
+
+// Individual page button
+templ pageButton(page, currentPage int, baseURL, targetID string) {
+	<button
+		if page != currentPage {
+			hx-get={ fmt.Sprintf("%s?page=%d", baseURL, page) }
+			hx-target={ fmt.Sprintf("#%s", targetID) }
+			hx-swap="outerHTML"
+			hx-include="[name='search'],[name='sort_by'],[name='sort_dir']"
+			class="h-9 w-9 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200"
+		} else {
+			class="h-9 w-9 rounded-lg border border-slate-300 bg-slate-900 text-sm font-medium text-white"
+		}
+	>
+		{ fmt.Sprintf("%d", page) }
+	</button>
+}
+
+// Helper functions
+func getStartRecord(currentPage, pageSize int) int {
+	return (currentPage-1)*pageSize + 1
+}
+
+func getEndRecord(currentPage, pageSize, totalRecords int) int {
+	end := currentPage * pageSize
+	if end > totalRecords {
+		return totalRecords
+	}
+	return end
+}
+
+func getMaxButtons(max int) int {
+	if max <= 0 {
+		return 7
+	}
+	return max
+}
+
+type pageRange struct {
+	start             int
+	end               int
+	showFirst         bool
+	showLast          bool
+	showLeftEllipsis  bool
+	showRightEllipsis bool
+}
+
+func getPageRange(config PaginationConfig) pageRange {
+	maxButtons := getMaxButtons(config.MaxButtons)
+	return calculatePageRange(config.CurrentPage, config.TotalPages, maxButtons)
+}
+
+func calculatePageRange(currentPage, totalPages, maxButtons int) pageRange {
+	if totalPages <= maxButtons {
+		return pageRange{
+			start: 1,
+			end:   totalPages,
+		}
+	}
+
+	// Calculate how many buttons on each side of current page
+	sideButtons := (maxButtons - 3) / 2 // -3 for first, last, and current
+
+	start := currentPage - sideButtons
+	end := currentPage + sideButtons
+
+	// Adjust if we're near the beginning
+	if start <= 2 {
+		start = 2
+		end = maxButtons - 1
+	}
+
+	// Adjust if we're near the end
+	if end >= totalPages-1 {
+		end = totalPages - 1
+		start = totalPages - maxButtons + 2
+	}
+
+	return pageRange{
+		start:             start,
+		end:               end,
+		showFirst:         start > 2,
+		showLast:          end < totalPages-1,
+		showLeftEllipsis:  start > 2,
+		showRightEllipsis: end < totalPages-1,
+	}
+}

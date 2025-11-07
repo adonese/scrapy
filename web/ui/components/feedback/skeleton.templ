@@ -1,0 +1,303 @@
+package feedback
+
+type SkeletonProps struct {
+	Width      string // w-full, w-1/2, w-32, etc.
+	Height     string // h-4, h-8, h-12, etc.
+	Rounded    string // rounded, rounded-md, rounded-lg, rounded-full
+	Class      string // additional classes
+	Animate    bool   // enable pulse animation (default: true)
+	AlpineData string
+}
+
+func getSkeletonClasses(props SkeletonProps) string {
+	baseClasses := "bg-slate-200"
+
+	// Default values
+	width := props.Width
+	if width == "" {
+		width = "w-full"
+	}
+
+	height := props.Height
+	if height == "" {
+		height = "h-4"
+	}
+
+	rounded := props.Rounded
+	if rounded == "" {
+		rounded = "rounded"
+	}
+
+	// Animation (default to true)
+	animate := ""
+	if props.Animate || (!props.Animate && props.Animate == false && props.Class == "") {
+		animate = "animate-pulse"
+	}
+
+	classes := baseClasses + " " + width + " " + height + " " + rounded + " " + animate
+	if props.Class != "" {
+		classes += " " + props.Class
+	}
+	return classes
+}
+
+templ Skeleton(props SkeletonProps) {
+	<div
+		class={ getSkeletonClasses(props) }
+		if props.AlpineData != "" {
+			x-data={ props.AlpineData }
+		}
+		aria-hidden="true"
+	></div>
+}
+
+// SkeletonText creates a text skeleton with multiple lines
+type SkeletonTextProps struct {
+	Lines      int    // number of lines (default: 3)
+	LastLine   string // width of last line (default: w-3/4)
+	Class      string // additional classes
+	AlpineData string
+}
+
+templ SkeletonText(props SkeletonTextProps) {
+	<div
+		class={ "space-y-3 " + props.Class }
+		if props.AlpineData != "" {
+			x-data={ props.AlpineData }
+		}
+		aria-hidden="true"
+	>
+		for i := 1; i <= getSkeletonTextLines(props); i++ {
+			if i == getSkeletonTextLines(props) {
+				@Skeleton(SkeletonProps{
+					Width:   getSkeletonLastLineWidth(props),
+					Height:  "h-4",
+					Rounded: "rounded",
+					Animate: true,
+				})
+			} else {
+				@Skeleton(SkeletonProps{
+					Width:   "w-full",
+					Height:  "h-4",
+					Rounded: "rounded",
+					Animate: true,
+				})
+			}
+		}
+	</div>
+}
+
+func getSkeletonTextLines(props SkeletonTextProps) int {
+	if props.Lines > 0 {
+		return props.Lines
+	}
+	return 3
+}
+
+func getSkeletonLastLineWidth(props SkeletonTextProps) string {
+	if props.LastLine != "" {
+		return props.LastLine
+	}
+	return "w-3/4"
+}
+
+// SkeletonCircle creates a circular skeleton (for avatars)
+type SkeletonCircleProps struct {
+	Size       string // h-10 w-10, h-12 w-12, etc.
+	Class      string
+	Animate    bool
+	AlpineData string
+}
+
+templ SkeletonCircle(props SkeletonCircleProps) {
+	<div
+		class={ getSkeletonCircleClasses(props) }
+		if props.AlpineData != "" {
+			x-data={ props.AlpineData }
+		}
+		aria-hidden="true"
+	></div>
+}
+
+func getSkeletonCircleClasses(props SkeletonCircleProps) string {
+	size := props.Size
+	if size == "" {
+		size = "h-10 w-10"
+	}
+
+	animate := ""
+	if props.Animate || (!props.Animate && props.Animate == false && props.Class == "") {
+		animate = "animate-pulse"
+	}
+
+	classes := "bg-slate-200 rounded-full " + size + " " + animate
+	if props.Class != "" {
+		classes += " " + props.Class
+	}
+	return classes
+}
+
+// SkeletonCard creates a card skeleton with avatar, title, and text
+type SkeletonCardProps struct {
+	ShowAvatar bool
+	ShowImage  bool
+	Lines      int
+	Class      string
+	AlpineData string
+}
+
+templ SkeletonCard(props SkeletonCardProps) {
+	<div
+		class={ "rounded-lg border border-slate-200 bg-white p-6 shadow-sm " + props.Class }
+		if props.AlpineData != "" {
+			x-data={ props.AlpineData }
+		}
+		aria-hidden="true"
+	>
+		if props.ShowImage {
+			@Skeleton(SkeletonProps{
+				Width:   "w-full",
+				Height:  "h-48",
+				Rounded: "rounded-lg",
+				Animate: true,
+				Class:   "mb-4",
+			})
+		}
+		<div class="space-y-4">
+			if props.ShowAvatar {
+				<div class="flex items-center space-x-3">
+					@SkeletonCircle(SkeletonCircleProps{
+						Size:    "h-10 w-10",
+						Animate: true,
+					})
+					<div class="flex-1 space-y-2">
+						@Skeleton(SkeletonProps{
+							Width:   "w-1/4",
+							Height:  "h-4",
+							Rounded: "rounded",
+							Animate: true,
+						})
+						@Skeleton(SkeletonProps{
+							Width:   "w-1/3",
+							Height:  "h-3",
+							Rounded: "rounded",
+							Animate: true,
+						})
+					</div>
+				</div>
+			} else {
+				@Skeleton(SkeletonProps{
+					Width:   "w-1/3",
+					Height:  "h-6",
+					Rounded: "rounded",
+					Animate: true,
+					Class:   "mb-2",
+				})
+			}
+			@SkeletonText(SkeletonTextProps{
+				Lines:    getSkeletonCardLines(props),
+				LastLine: "w-2/3",
+			})
+		</div>
+	</div>
+}
+
+func getSkeletonCardLines(props SkeletonCardProps) int {
+	if props.Lines > 0 {
+		return props.Lines
+	}
+	return 3
+}
+
+// SkeletonTable creates a table skeleton
+type SkeletonTableProps struct {
+	Rows    int
+	Columns int
+	Class   string
+}
+
+templ SkeletonTable(props SkeletonTableProps) {
+	<div class={ "space-y-3 " + props.Class } aria-hidden="true">
+		<!-- Header -->
+		<div class="flex space-x-4">
+			for i := 0; i < getSkeletonTableColumns(props); i++ {
+				@Skeleton(SkeletonProps{
+					Width:   "flex-1",
+					Height:  "h-6",
+					Rounded: "rounded",
+					Animate: true,
+				})
+			}
+		</div>
+		<!-- Rows -->
+		for i := 0; i < getSkeletonTableRows(props); i++ {
+			<div class="flex space-x-4">
+				for j := 0; j < getSkeletonTableColumns(props); j++ {
+					@Skeleton(SkeletonProps{
+						Width:   "flex-1",
+						Height:  "h-4",
+						Rounded: "rounded",
+						Animate: true,
+					})
+				}
+			</div>
+		}
+	</div>
+}
+
+func getSkeletonTableRows(props SkeletonTableProps) int {
+	if props.Rows > 0 {
+		return props.Rows
+	}
+	return 5
+}
+
+func getSkeletonTableColumns(props SkeletonTableProps) int {
+	if props.Columns > 0 {
+		return props.Columns
+	}
+	return 4
+}
+
+// SkeletonList creates a list skeleton
+type SkeletonListProps struct {
+	Items      int
+	ShowAvatar bool
+	Class      string
+}
+
+templ SkeletonList(props SkeletonListProps) {
+	<div class={ "space-y-4 " + props.Class } aria-hidden="true">
+		for i := 0; i < getSkeletonListItems(props); i++ {
+			<div class="flex items-center space-x-3">
+				if props.ShowAvatar {
+					@SkeletonCircle(SkeletonCircleProps{
+						Size:    "h-10 w-10",
+						Animate: true,
+					})
+				}
+				<div class="flex-1 space-y-2">
+					@Skeleton(SkeletonProps{
+						Width:   "w-3/4",
+						Height:  "h-4",
+						Rounded: "rounded",
+						Animate: true,
+					})
+					@Skeleton(SkeletonProps{
+						Width:   "w-1/2",
+						Height:  "h-3",
+						Rounded: "rounded",
+						Animate: true,
+					})
+				</div>
+			</div>
+		}
+	</div>
+}
+
+func getSkeletonListItems(props SkeletonListProps) int {
+	if props.Items > 0 {
+		return props.Items
+	}
+	return 5
+}

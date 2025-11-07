@@ -1,0 +1,44 @@
+{
+  "name": "scrapy-ui",
+  "version": "1.0.0",
+  "description": "Scrapy web UI with modern frontend tooling",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:vite\" \"npm run dev:tailwind\" \"npm run dev:air\"",
+    "dev:vite": "vite",
+    "dev:tailwind": "tailwindcss -i ./web/static/src/css/app.css -o ./web/static/dist/css/app.css --watch",
+    "dev:air": "air",
+    "build": "npm run build:vite && npm run build:tailwind",
+    "build:vite": "vite build",
+    "build:tailwind": "tailwindcss -i ./web/static/src/css/app.css -o ./web/static/dist/css/app.css --minify",
+    "test": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "lint": "eslint web/static/src --ext .js,.ts",
+    "lint:fix": "eslint web/static/src --ext .js,.ts --fix",
+    "format": "prettier --write \"web/static/src/**/*.{js,ts,css}\"",
+    "format:check": "prettier --check \"web/static/src/**/*.{js,ts,css}\""
+  },
+  "dependencies": {
+    "alpinejs": "^3.14.1",
+    "htmx.org": "^1.9.10"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.41.2",
+    "@tailwindcss/forms": "^0.5.7",
+    "@tailwindcss/typography": "^0.5.10",
+    "@types/node": "^20.11.16",
+    "@typescript-eslint/eslint-plugin": "^6.20.0",
+    "@typescript-eslint/parser": "^6.20.0",
+    "autoprefixer": "^10.4.17",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.56.0",
+    "postcss": "^8.4.35",
+    "prettier": "^3.2.5",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.12",
+    "vitest": "^1.2.2"
+  }
+}

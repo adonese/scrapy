@@ -1,0 +1,84 @@
+package core
+
+type BadgeProps struct {
+	Variant    string            // default, success, warning, danger, info
+	Class      string            // additional classes
+	HxAttrs    map[string]string // HTMX attributes
+	AlpineData string            // Alpine.js x-data
+	AriaLabel  string
+}
+
+func getBadgeClasses(props BadgeProps) string {
+	baseClasses := "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
+
+	// Variant classes
+	var variantClasses string
+	switch props.Variant {
+	case "success":
+		variantClasses = "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 focus:ring-green-600 dark:focus:ring-green-500"
+	case "warning":
+		variantClasses = "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 focus:ring-amber-600 dark:focus:ring-amber-500"
+	case "danger":
+		variantClasses = "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 focus:ring-red-600 dark:focus:ring-red-500"
+	case "info":
+		variantClasses = "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 focus:ring-blue-600 dark:focus:ring-blue-500"
+	default: // default
+		variantClasses = "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-300 focus:ring-slate-600 dark:focus:ring-slate-500"
+	}
+
+	classes := baseClasses + " " + variantClasses
+	if props.Class != "" {
+		classes += " " + props.Class
+	}
+	return classes
+}
+
+templ Badge(props BadgeProps, text string) {
+	<span
+		class={ getBadgeClasses(props) }
+		if props.AriaLabel != "" {
+			aria-label={ props.AriaLabel }
+		}
+		if props.AlpineData != "" {
+			x-data={ props.AlpineData }
+		}
+	>
+		{ text }
+	</span>
+}
+
+templ BadgeWithContent(props BadgeProps, content templ.Component) {
+	<span
+		class={ getBadgeClasses(props) }
+		if props.AriaLabel != "" {
+			aria-label={ props.AriaLabel }
+		}
+		if props.AlpineData != "" {
+			x-data={ props.AlpineData }
+		}
+	>
+		@content
+	</span>
+}
+
+type BadgeDotProps struct {
+	Variant string // success, warning, danger, info
+	Class   string
+}
+
+templ BadgeDot(props BadgeDotProps) {
+	<span
+		class={ "inline-block h-2 w-2 rounded-full " + props.Class }
+		if props.Variant == "success" {
+			class="bg-green-600"
+		} else if props.Variant == "warning" {
+			class="bg-amber-600"
+		} else if props.Variant == "danger" {
+			class="bg-red-600"
+		} else if props.Variant == "info" {
+			class="bg-blue-600"
+		} else {
+			class="bg-slate-600"
+		}
+	></span>
+}
