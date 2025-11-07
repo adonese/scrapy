@@ -82,7 +82,7 @@ func TestCostDataPointHandler_Create(t *testing.T) {
 		mockRepo.Reset()
 
 		reqBody := `{
-			"category": "Housing",
+                        "category": "Housing",
 			"item_name": "1BR Apartment",
 			"price": 0,
 			"location": {
@@ -90,6 +90,33 @@ func TestCostDataPointHandler_Create(t *testing.T) {
 			},
 			"source": "manual"
 		}`
+
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/cost-data-points", strings.NewReader(reqBody))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		err := handler.Create(c)
+		require.Error(t, err)
+
+		httpErr, ok := err.(*echo.HTTPError)
+		require.True(t, ok)
+		assert.Equal(t, http.StatusBadRequest, httpErr.Code)
+	})
+
+	t.Run("validation error - invalid confidence", func(t *testing.T) {
+		mockRepo.Reset()
+
+		reqBody := `{
+                        "category": "Housing",
+                        "item_name": "1BR Apartment",
+                        "price": 1000,
+                        "location": {
+                                "emirate": "Dubai"
+                        },
+                        "source": "manual",
+                        "confidence": -0.5
+                }`
 
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/cost-data-points", strings.NewReader(reqBody))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -165,6 +192,57 @@ func TestCostDataPointHandler_GetByID(t *testing.T) {
 
 		assert.Equal(t, "test-id-1", response.ID)
 		assert.Equal(t, "Housing", response.Category)
+	})
+
+	t.Run("get latest when recorded_at missing", func(t *testing.T) {
+		mockRepo.Reset()
+
+		baseTime := time.Now()
+		earlier := baseTime.Add(-2 * time.Hour)
+
+		// Older record
+		oldReq := dto.CreateCostDataPointRequest{
+			Category:   "Housing",
+			ItemName:   "Older Apartment",
+			Price:      40000,
+			Location:   dto.LocationDTO{Emirate: "Dubai"},
+			Source:     "manual",
+			RecordedAt: &earlier,
+		}
+		oldModel := oldReq.ToModel()
+		oldModel.ID = "test-id-1"
+		require.NoError(t, mockRepo.Create(nil, oldModel))
+
+		// Latest record
+		newReq := dto.CreateCostDataPointRequest{
+			Category:   "Housing",
+			ItemName:   "New Apartment",
+			Price:      60000,
+			Location:   dto.LocationDTO{Emirate: "Dubai"},
+			Source:     "manual",
+			RecordedAt: &baseTime,
+		}
+		newModel := newReq.ToModel()
+		newModel.ID = "test-id-1"
+		require.NoError(t, mockRepo.Create(nil, newModel))
+
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/cost-data-points/test-id-1", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetParamNames("id")
+		c.SetParamValues("test-id-1")
+
+		err := handler.GetByID(c)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		var response dto.CostDataPointResponse
+		err = json.Unmarshal(rec.Body.Bytes(), &response)
+		require.NoError(t, err)
+
+		assert.Equal(t, "test-id-1", response.ID)
+		assert.Equal(t, "New Apartment", response.ItemName)
+		assert.Equal(t, newModel.RecordedAt.Unix(), response.RecordedAt.Unix())
 	})
 
 	t.Run("not found", func(t *testing.T) {
@@ -382,6 +460,40 @@ func TestCostDataPointHandler_Update(t *testing.T) {
 		httpErr, ok := err.(*echo.HTTPError)
 		require.True(t, ok)
 		assert.Equal(t, http.StatusNotFound, httpErr.Code)
+	})
+
+	t.Run("update with negative price", func(t *testing.T) {
+		mockRepo.Reset()
+
+		now := time.Now()
+		createReq := dto.CreateCostDataPointRequest{
+			Category: "Housing",
+			ItemName: "Test Apartment",
+			Price:    50000,
+			Location: dto.LocationDTO{Emirate: "Dubai"},
+			Source:   "manual",
+		}
+		cdp := createReq.ToModel()
+		cdp.ID = "test-id-1"
+		cdp.RecordedAt = now
+		require.NoError(t, mockRepo.Create(nil, cdp))
+
+		updateBody := `{"price": -10}`
+
+		req := httptest.NewRequest(http.MethodPut, "/api/v1/cost-data-points/test-id-1", strings.NewReader(updateBody))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetParamNames("id")
+		c.SetParamValues("test-id-1")
+		c.QueryParams().Add("recorded_at", now.Format(time.RFC3339))
+
+		err := handler.Update(c)
+		require.Error(t, err)
+
+		httpErr, ok := err.(*echo.HTTPError)
+		require.True(t, ok)
+		assert.Equal(t, http.StatusBadRequest, httpErr.Code)
 	})
 
 	t.Run("missing recorded_at", func(t *testing.T) {

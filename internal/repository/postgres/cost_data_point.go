@@ -203,6 +203,12 @@ func (r *CostDataPointRepository) List(ctx context.Context, filter repository.Li
 	argPos := 1
 
 	// Apply filters
+	if filter.ID != "" {
+		query += fmt.Sprintf(" AND id = $%d", argPos)
+		args = append(args, filter.ID)
+		argPos++
+	}
+
 	if filter.Category != "" {
 		query += fmt.Sprintf(" AND category = $%d", argPos)
 		args = append(args, filter.Category)
