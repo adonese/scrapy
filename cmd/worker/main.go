@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
@@ -41,10 +42,18 @@ func main() {
 
 	// Configure scrapers
 	scraperConfig := scrapers.Config{
-		UserAgent:  "Mozilla/5.0 (compatible; UAECostOfLiving/1.0)",
-		RateLimit:  1,
-		Timeout:    30,
-		MaxRetries: 3,
+		UserAgent: "Mozilla/5.0 (compatible; UAECostOfLiving/1.0)",
+		UserAgents: []string{
+			"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+			"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
+			"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+		},
+		RateLimit:               1,
+		Timeout:                 30,
+		MaxRetries:              3,
+		MinDelayBetweenRequests: 500 * time.Millisecond,
+		MaxDelayBetweenRequests: 2 * time.Second,
+		RetryBaseDelay:          2 * time.Second,
 	}
 
 	// Register all scrapers

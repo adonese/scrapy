@@ -6,6 +6,8 @@ import (
 
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
+
+	"github.com/adonese/cost-of-living/internal/services"
 )
 
 type ScraperWorkflowInput struct {
@@ -17,6 +19,8 @@ type ScraperWorkflowResult struct {
 	ScraperName  string
 	ItemsScraped int
 	ItemsSaved   int
+	SaveFailures int
+	Validation   services.ValidationSummary
 	Errors       []string
 	Duration     time.Duration
 	CompletedAt  time.Time
@@ -52,6 +56,8 @@ func ScraperWorkflow(ctx workflow.Context, input ScraperWorkflowInput) (*Scraper
 		ScraperName:  input.ScraperName,
 		ItemsScraped: activityResult.ItemsScraped,
 		ItemsSaved:   activityResult.ItemsSaved,
+		SaveFailures: activityResult.SaveFailures,
+		Validation:   activityResult.Validation,
 		Duration:     duration,
 		CompletedAt:  workflow.Now(ctx),
 	}
@@ -75,7 +81,9 @@ func ScraperWorkflow(ctx workflow.Context, input ScraperWorkflowInput) (*Scraper
 	logger.Info("Scraper workflow completed",
 		"scraper", input.ScraperName,
 		"scraped", activityResult.ItemsScraped,
+		"validated", activityResult.ItemsValidated,
 		"saved", activityResult.ItemsSaved,
+		"save_failures", activityResult.SaveFailures,
 		"duration", duration)
 
 	return result, nil
@@ -86,7 +94,7 @@ func ScheduledScraperWorkflow(ctx workflow.Context) error {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Starting scheduled scraper workflow")
 
-	scrapers := []string{"bayut"} // Can add more: "dubizzle", "carrefour", etc.
+	scrapers := dailyScraperNames()
 
 	// Run scrapers in parallel
 	futures := []workflow.Future{}

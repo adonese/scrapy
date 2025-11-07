@@ -10,13 +10,18 @@ import (
 	"github.com/adonese/cost-of-living/internal/repository"
 	"github.com/adonese/cost-of-living/internal/services"
 	"github.com/adonese/cost-of-living/pkg/logger"
-	"github.com/adonese/cost-of-living/pkg/metrics"
 )
 
 type ScraperActivityResult struct {
-	ItemsScraped int
-	ItemsSaved   int
-	Duration     time.Duration
+	ScraperName    string
+	ItemsFetched   int
+	ItemsScraped   int
+	ItemsValidated int
+	ItemsSaved     int
+	SaveFailures   int
+	Duration       time.Duration
+	Validation     services.ValidationSummary
+	Errors         []string
 }
 
 type ScraperActivityDependencies struct {
@@ -38,58 +43,51 @@ func GetActivityDependencies() *ScraperActivityDependencies {
 func RunScraperActivity(ctx context.Context, scraperName string) (*ScraperActivityResult, error) {
 	logger.Info("Running scraper activity", "scraper", scraperName)
 
-	// Send heartbeat to let Temporal know we're alive
 	activity.RecordHeartbeat(ctx, "starting")
 
 	start := time.Now()
 
-	// Get count of items before scraping
-	filterBefore := repository.ListFilter{
-		Limit:  100,
-		Offset: 0,
-	}
-	itemsBefore, _ := dependencies.Repository.List(ctx, filterBefore)
-	countBefore := len(itemsBefore)
-
-	// Run the scraper
-	err := dependencies.ScraperService.RunScraper(ctx, scraperName)
-
-	duration := time.Since(start)
-
-	// Record metrics
-	if err != nil {
-		metrics.ScraperRunsTotal.WithLabelValues(scraperName, "error").Inc()
-		return nil, fmt.Errorf("scraper failed: %w", err)
-	}
-
-	// Get count of items after scraping (approximate)
-	filterAfter := repository.ListFilter{
-		Limit:  100,
-		Offset: 0,
-	}
-	itemsAfter, _ := dependencies.Repository.List(ctx, filterAfter)
-	countAfter := len(itemsAfter)
-
-	// Calculate items scraped (this is approximate, in production you'd want to track this more precisely)
-	itemsScraped := countAfter - countBefore
-	if itemsScraped < 0 {
-		itemsScraped = 0 // Safety check
-	}
+	serviceResult, err := dependencies.ScraperService.RunScraper(ctx, scraperName)
 
 	result := &ScraperActivityResult{
-		ItemsScraped: itemsScraped,
-		ItemsSaved:   itemsScraped, // Simplified - assume all scraped items were saved
-		Duration:     duration,
+		ScraperName: scraperName,
+		Duration:    time.Since(start),
+	}
+
+	if serviceResult != nil {
+		result.ItemsFetched = serviceResult.Fetched
+		result.ItemsScraped = serviceResult.Fetched
+		result.ItemsValidated = serviceResult.Validation.Valid
+		result.ItemsSaved = serviceResult.Saved
+		result.SaveFailures = serviceResult.SaveFailures
+		result.Validation = serviceResult.Validation
+		result.Duration = serviceResult.Duration
+		result.Errors = make([]string, 0, len(serviceResult.Errors))
+		for _, serviceErr := range serviceResult.Errors {
+			if serviceErr != nil {
+				result.Errors = append(result.Errors, serviceErr.Error())
+			}
+		}
 	}
 
 	activity.RecordHeartbeat(ctx, "completed")
 
+	if err != nil {
+		logger.Error("Scraper activity failed",
+			"scraper", scraperName,
+			"duration", result.Duration,
+			"error", err)
+		return result, fmt.Errorf("scraper failed: %w", err)
+	}
+
 	logger.Info("Scraper activity completed",
 		"scraper", scraperName,
-		"duration", duration,
-		"itemsScraped", itemsScraped)
-
-	metrics.ScraperRunsTotal.WithLabelValues(scraperName, "success").Inc()
+		"duration", result.Duration,
+		"fetched", result.ItemsFetched,
+		"scraped", result.ItemsScraped,
+		"validated", result.ItemsValidated,
+		"saved", result.ItemsSaved,
+		"save_failures", result.SaveFailures)
 
 	return result, nil
 }

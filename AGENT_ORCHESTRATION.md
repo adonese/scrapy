@@ -6,10 +6,10 @@
 
 ## 🎯 Mission Control
 
-### Current Wave: 1 - Testing Foundation
-### Status: INITIALIZING
+### Current Wave: 5 - Scraper Reliability & Scheduling Alignment
+### Status: ACTIVE
 ### Blockers: None
-### Next Sync: After all Wave 1 agents report complete
+### Next Sync: After verification of workflow + scheduler integration tests
 
 ---
 
@@ -42,6 +42,12 @@
 | Agent 10 | Workflow Integration | COMPLETE | 2025-11-07 | 2025-11-07 | None | cmd/worker/main.go, cmd/orchestrator/main.go, internal/workflow/batch_workflow.go, internal/workflow/scheduler_workflow.go, internal/workflow/validation_activities.go, internal/workflow/dewa_workflow.go, internal/services/scraper_service.go |
 | Agent 11 | Documentation & Testing | COMPLETE | 2025-11-07 | 2025-11-07 | None | docs/SCRAPERS.md, docs/RUNBOOK.md, docs/QA_REPORT.md, docs/PROJECT_SUMMARY.md, test reports |
 
+### Wave 5: Scraper Reliability & Temporal Alignment [IN PROGRESS]
+| Agent | Task | Status | Started | Completed | Blockers | Outputs |
+|-------|------|--------|---------|-----------|----------|---------|
+| Agent 12 | Scheduler Canonicalization | COMPLETE | 2025-11-09 | 2025-11-09 | Legacy naming drift | internal/workflow/scheduler_workflow.go, internal/workflow/batch_workflow.go |
+| Agent 13 | Workflow Test Harness Updates | COMPLETE | 2025-11-09 | 2025-11-09 | None | internal/workflow/scheduler_config_test.go |
+
 ---
 
 ## 🔄 Agent Handoffs
@@ -49,6 +55,7 @@
 ### Pending Handoffs
 - [ ] Agents 4-8 → Agent 10: Scraper registration code
 - [ ] Agent 9 → Agent 11: Validation rules documentation
+- [ ] Agent 12 → Agent 13: Verified canonical names + helper coverage
 
 ### Completed Handoffs
 - [x] Agent 3 → All: CI/CD pipeline usage (See CI_CD_GUIDE.md)
@@ -497,4 +504,20 @@ make help
 - Production readiness: 92% of criteria met, approved for deployment
 - Ready for handoff to operations team and production deployment
 - Documentation files: docs/SCRAPERS.md, docs/RUNBOOK.md, docs/QA_REPORT.md, docs/PROJECT_SUMMARY.md
+
+
+### [2025-11-09 - Orchestrator]
+- Activated Wave 5 to address scheduler naming drift discovered in Temporal workflows
+- Assigned Agent 12 to reconcile canonical scraper identifiers
+- Assigned Agent 13 to extend workflow test harness for scheduling helpers
+
+### [2025-11-09 - Agent 12]
+- Normalized scheduler defaults to snake_case identifiers shared with scraper registrations
+- Added helper functions for category and frequency based scraper selection
+- Updated batch workflows and scheduled runners to auto-resolve scraper sets via shared helpers
+
+### [2025-11-09 - Agent 13]
+- Added unit coverage for scheduler helpers and canonical name expectations
+- Verified resolve logic trims/normalizes explicit scraper lists supplied by orchestrator CLI
+- Confirmed daily/weekly/monthly workflows now source scrapers from canonical helper functions
 

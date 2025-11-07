@@ -3,6 +3,7 @@ package mock
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -90,6 +91,9 @@ func (m *CostDataPointRepository) List(ctx context.Context, filter repository.Li
 
 	// Collect all data points
 	for _, cdp := range m.data {
+		if filter.ID != "" && cdp.ID != filter.ID {
+			continue
+		}
 		// Apply filters
 		if filter.Category != "" && cdp.Category != filter.Category {
 			continue
@@ -106,6 +110,11 @@ func (m *CostDataPointRepository) List(ctx context.Context, filter repository.Li
 
 		results = append(results, cdp)
 	}
+
+	// Sort by recorded_at descending to match real repository behavior
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].RecordedAt.After(results[j].RecordedAt)
+	})
 
 	// Apply pagination
 	start := filter.Offset

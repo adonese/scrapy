@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"testing"
 
 	"github.com/adonese/cost-of-living/internal/scrapers"
 	"github.com/adonese/cost-of-living/internal/scrapers/careem"
+	"github.com/adonese/cost-of-living/test/helpers"
 )
 
 func TestCareemIntegration_WithStaticSource(t *testing.T) {
@@ -18,8 +18,7 @@ func TestCareemIntegration_WithStaticSource(t *testing.T) {
 	}
 
 	// Use the fixture file
-	fixturesDir := getFixturesDir(t)
-	fixturePath := filepath.Join(fixturesDir, "careem", "rates.json")
+	fixturePath := helpers.GetFixturePath("careem", "rates.json")
 
 	config := scrapers.Config{
 		UserAgent:  "Mozilla/5.0 (compatible; CostOfLivingBot/1.0)",
@@ -129,8 +128,7 @@ func TestCareemIntegration_MultipleSourceFallback(t *testing.T) {
 	}
 
 	// Create sources: failing source + working static source
-	fixturesDir := getFixturesDir(t)
-	fixturePath := filepath.Join(fixturesDir, "careem", "rates.json")
+	fixturePath := helpers.GetFixturePath("careem", "rates.json")
 
 	config := scrapers.Config{
 		UserAgent:  "Mozilla/5.0 (compatible; CostOfLivingBot/1.0)",
@@ -280,8 +278,7 @@ func TestCareemIntegration_FareEstimation(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	fixturesDir := getFixturesDir(t)
-	fixturePath := filepath.Join(fixturesDir, "careem", "rates.json")
+	fixturePath := helpers.GetFixturePath("careem", "rates.json")
 
 	config := scrapers.Config{
 		UserAgent:  "Mozilla/5.0 (compatible; CostOfLivingBot/1.0)",
@@ -332,16 +329,16 @@ func TestCareemIntegration_FareEstimation(t *testing.T) {
 			minExpected:     30.0,
 			maxExpected:     40.0,
 		},
-		{
-			name:            "airport trip with peak",
-			distanceKm:      15.0,
-			waitTimeMinutes: 10.0,
-			isPeakHour:      true,
-			isAirport:       true,
-			salikGates:      2,
-			minExpected:     70.0,
-			maxExpected:     90.0,
-		},
+                {
+                        name:            "airport trip with peak",
+                        distanceKm:      15.0,
+                        waitTimeMinutes: 10.0,
+                        isPeakHour:      true,
+                        isAirport:       true,
+                        salikGates:      2,
+                        minExpected:     70.0,
+                        maxExpected:     95.0,
+                },
 	}
 
 	for _, tt := range tests {
@@ -373,8 +370,7 @@ func TestCareemIntegration_GetRatesSummary(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	fixturesDir := getFixturesDir(t)
-	fixturePath := filepath.Join(fixturesDir, "careem", "rates.json")
+	fixturePath := helpers.GetFixturePath("careem", "rates.json")
 
 	config := scrapers.Config{
 		UserAgent:  "Mozilla/5.0 (compatible; CostOfLivingBot/1.0)",

@@ -49,7 +49,6 @@ func TestSEWAScraper_Integration(t *testing.T) {
 		doc, err := goquery.NewDocumentFromReader(strings.NewReader(string(fixtureHTML)))
 		require.NoError(t, err)
 
-		ctx := context.Background()
 		dataPoints, err := scraper.ScrapeFromHTML(doc, "https://www.sewa.gov.ae/en/content/tariff")
 
 		require.NoError(t, err)
@@ -66,7 +65,7 @@ func TestSEWAScraper_Integration(t *testing.T) {
 		dataPoints, err := scraper.ScrapeFromHTML(doc, "https://www.sewa.gov.ae/en/content/tariff")
 		require.NoError(t, err)
 
-		electricityPoints := filterBySubCategory(dataPoints, "Electricity")
+		electricityPoints := filterBySubCategorySEWA(dataPoints, "Electricity")
 		assert.Len(t, electricityPoints, 7, "should have 7 electricity tiers (4 Emirati + 3 Expatriate)")
 
 		emiratiTiers := 0
@@ -102,7 +101,7 @@ func TestSEWAScraper_Integration(t *testing.T) {
 		dataPoints, err := scraper.ScrapeFromHTML(doc, "https://www.sewa.gov.ae/en/content/tariff")
 		require.NoError(t, err)
 
-		waterPoints := filterBySubCategory(dataPoints, "Water")
+		waterPoints := filterBySubCategorySEWA(dataPoints, "Water")
 		assert.Len(t, waterPoints, 2, "should have 2 water rates")
 
 		var emiratiWater, expatWater *models.CostDataPoint
@@ -136,7 +135,7 @@ func TestSEWAScraper_Integration(t *testing.T) {
 		dataPoints, err := scraper.ScrapeFromHTML(doc, "https://www.sewa.gov.ae/en/content/tariff")
 		require.NoError(t, err)
 
-		seweragePoints := filterBySubCategory(dataPoints, "Sewerage")
+		seweragePoints := filterBySubCategorySEWA(dataPoints, "Sewerage")
 		require.Len(t, seweragePoints, 1, "should have 1 sewerage charge")
 
 		sewerage := seweragePoints[0]
@@ -154,7 +153,7 @@ func TestSEWAScraper_Integration(t *testing.T) {
 		dataPoints, err := scraper.ScrapeFromHTML(doc, "https://www.sewa.gov.ae/en/content/tariff")
 		require.NoError(t, err)
 
-		electricityPoints := filterBySubCategory(dataPoints, "Electricity")
+		electricityPoints := filterBySubCategorySEWA(dataPoints, "Electricity")
 
 		// Find the 14 fils tier and verify conversion
 		for _, dp := range electricityPoints {
@@ -183,7 +182,7 @@ func TestSEWAScraper_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify that Emirati and Expatriate have different rates
-		electricityPoints := filterBySubCategory(dataPoints, "Electricity")
+		electricityPoints := filterBySubCategorySEWA(dataPoints, "Electricity")
 
 		var emiratiFirstTier, expatFirstTier float64
 		for _, dp := range electricityPoints {
@@ -253,7 +252,7 @@ func TestSEWAScraper_Integration(t *testing.T) {
 }
 
 // filterBySubCategory is a helper function to filter data points by subcategory
-func filterBySubCategory(dataPoints []*models.CostDataPoint, subCategory string) []*models.CostDataPoint {
+func filterBySubCategorySEWA(dataPoints []*models.CostDataPoint, subCategory string) []*models.CostDataPoint {
 	var filtered []*models.CostDataPoint
 	for _, dp := range dataPoints {
 		if dp.SubCategory == subCategory {

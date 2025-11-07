@@ -78,7 +78,12 @@ func main() {
 		fmt.Printf("\nWorkflow completed:\n")
 		fmt.Printf("  Scraper: %s\n", result.ScraperName)
 		fmt.Printf("  Items Scraped: %d\n", result.ItemsScraped)
+		fmt.Printf("  Items Validated: %d\n", result.Validation.Valid)
 		fmt.Printf("  Items Saved: %d\n", result.ItemsSaved)
+		fmt.Printf("  Save Failures: %d\n", result.SaveFailures)
+		if result.Validation.Invalid > 0 || result.Validation.LowQuality > 0 {
+			fmt.Printf("  Dropped (invalid/low_quality): %d/%d\n", result.Validation.Invalid, result.Validation.LowQuality)
+		}
 		fmt.Printf("  Duration: %s\n", result.Duration)
 		fmt.Printf("  Completed: %s\n", result.CompletedAt)
 

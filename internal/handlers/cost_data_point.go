@@ -43,7 +43,7 @@ func (h *CostDataPointHandler) Create(c echo.Context) error {
 	if req.Price <= 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "Price must be greater than 0")
 	}
-	if req.Confidence > 0 && (req.Confidence < 0 || req.Confidence > 1) {
+	if req.Confidence < 0 || req.Confidence > 1 {
 		return echo.NewHTTPError(http.StatusBadRequest, "Confidence must be between 0 and 1")
 	}
 
@@ -78,47 +78,21 @@ func (h *CostDataPointHandler) GetByID(c echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, "Invalid recorded_at format, use RFC3339")
 		}
 	} else {
-		// If no recorded_at provided, get the latest record
-		// We'll use a query to find the most recent recorded_at for this ID
+		// If no recorded_at provided, get the latest record for this ID
 		filter := repository.ListFilter{
-			Limit:  1,
-			Offset: 0,
+			ID:    id,
+			Limit: 1,
 		}
 		results, err := h.repo.List(c.Request().Context(), filter)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get cost data point")
 		}
 
-		// Find the record with matching ID and get its recorded_at
-		var found bool
-		for _, result := range results {
-			if result.ID == id {
-				recordedAt = result.RecordedAt
-				found = true
-				break
-			}
+		if len(results) == 0 {
+			return echo.NewHTTPError(http.StatusNotFound, "Cost data point not found")
 		}
 
-		if !found {
-			// Try to get more results
-			filter.Limit = 100
-			results, err = h.repo.List(c.Request().Context(), filter)
-			if err != nil {
-				return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get cost data point")
-			}
-
-			for _, result := range results {
-				if result.ID == id {
-					recordedAt = result.RecordedAt
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				return echo.NewHTTPError(http.StatusNotFound, "Cost data point not found")
-			}
-		}
+		recordedAt = results[0].RecordedAt
 	}
 
 	// Get the specific record
@@ -243,10 +217,10 @@ func (h *CostDataPointHandler) Update(c echo.Context) error {
 	}
 
 	// Additional validation for price if provided
-	if req.Price > 0 && req.Price <= 0 {
+	if req.Price < 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "Price must be greater than 0")
 	}
-	if req.Confidence > 0 && (req.Confidence < 0 || req.Confidence > 1) {
+	if req.Confidence < 0 || req.Confidence > 1 {
 		return echo.NewHTTPError(http.StatusBadRequest, "Confidence must be between 0 and 1")
 	}
 

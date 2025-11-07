@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"time"
 
 	"github.com/adonese/cost-of-living/internal/repository/postgres"
 	"github.com/adonese/cost-of-living/internal/scrapers"
@@ -42,10 +43,18 @@ func main() {
 
 	// Register scrapers
 	scraperConfig := scrapers.Config{
-		UserAgent:  "Mozilla/5.0 (compatible; UAECostOfLiving/1.0; +http://localhost)",
-		RateLimit:  1, // 1 request per second
-		Timeout:    30,
-		MaxRetries: 3,
+		UserAgent: "Mozilla/5.0 (compatible; UAECostOfLiving/1.0; +http://localhost)",
+		UserAgents: []string{
+			"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+			"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
+			"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+		},
+		RateLimit:               1, // 1 request per second
+		Timeout:                 30,
+		MaxRetries:              3,
+		MinDelayBetweenRequests: 500 * time.Millisecond,
+		MaxDelayBetweenRequests: 2 * time.Second,
+		RetryBaseDelay:          2 * time.Second,
 	}
 
 	// Determine which emirates to register
@@ -91,16 +100,48 @@ func main() {
 
 	if *scraperName == "all" {
 		logger.Info("Running all scrapers")
-		err = service.RunAllScrapers(ctx)
+		results, runErr := service.RunAllScrapers(ctx)
+		for _, res := range results {
+			logScrapeResult(res)
+		}
+		if runErr != nil {
+			logger.Error("One or more scrapers failed", "error", runErr)
+			os.Exit(1)
+		}
 	} else {
 		logger.Info("Running specific scraper", "name", *scraperName)
-		err = service.RunScraper(ctx, *scraperName)
-	}
-
-	if err != nil {
-		logger.Error("Scraper failed", "error", err)
-		os.Exit(1)
+		result, runErr := service.RunScraper(ctx, *scraperName)
+		if result != nil {
+			logScrapeResult(result)
+		}
+		if runErr != nil {
+			logger.Error("Scraper failed", "error", runErr)
+			os.Exit(1)
+		}
 	}
 
 	logger.Info("Scraping completed successfully")
+}
+
+func logScrapeResult(res *services.ScrapeResult) {
+	if res == nil {
+		return
+	}
+
+	logger.Info("Scraper summary",
+		"scraper", res.ScraperName,
+		"fetched", res.Fetched,
+		"validated", res.Validation.Valid,
+		"dropped_invalid", res.Validation.Invalid,
+		"dropped_low_quality", res.Validation.LowQuality,
+		"validation_skipped", res.Validation.Skipped,
+		"saved", res.Saved,
+		"save_failures", res.SaveFailures,
+		"duration", res.Duration)
+
+	for _, err := range res.Errors {
+		logger.Warn("Scraper encountered issue",
+			"scraper", res.ScraperName,
+			"error", err)
+	}
 }

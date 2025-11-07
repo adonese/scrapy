@@ -81,13 +81,13 @@ func createTestCostDataPoint() *models.CostDataPoint {
 				Lon: 55.1396,
 			},
 		},
-		RecordedAt:  now,
-		ValidFrom:   now,
-		Source:      "test",
-		SourceURL:   "https://example.com/test",
-		Confidence:  1.0,
-		Unit:        "AED",
-		Tags:        []string{"rent", "apartment", "marina"},
+		RecordedAt: now,
+		ValidFrom:  now,
+		Source:     "test",
+		SourceURL:  "https://example.com/test",
+		Confidence: 1.0,
+		Unit:       "AED",
+		Tags:       []string{"rent", "apartment", "marina"},
 		Attributes: map[string]interface{}{
 			"bedrooms":  1,
 			"bathrooms": 1,
@@ -345,6 +345,29 @@ func TestList(t *testing.T) {
 		for _, r := range results {
 			if r.Location.Emirate != "Dubai" {
 				t.Errorf("Expected emirate Dubai, got %s", r.Location.Emirate)
+			}
+		}
+	})
+
+	t.Run("filter by id", func(t *testing.T) {
+		target := records[0]
+		filter := repository.ListFilter{
+			ID:    target.ID,
+			Limit: 10,
+		}
+
+		results, err := repo.List(ctx, filter)
+		if err != nil {
+			t.Fatalf("Failed to list cost data points: %v", err)
+		}
+
+		if len(results) == 0 {
+			t.Fatal("Expected results for specific ID filter")
+		}
+
+		for _, r := range results {
+			if r.ID != target.ID {
+				t.Fatalf("Expected only ID %s, got %s", target.ID, r.ID)
 			}
 		}
 	})

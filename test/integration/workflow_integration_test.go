@@ -2,6 +2,7 @@ package integration
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -12,10 +13,13 @@ import (
 	"github.com/adonese/cost-of-living/internal/scrapers/dubizzle"
 	"github.com/adonese/cost-of-living/internal/services"
 	"github.com/adonese/cost-of-living/internal/workflow"
+	"github.com/adonese/cost-of-living/pkg/logger"
+	"github.com/adonese/cost-of-living/test/helpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
+	temporalworkflow "go.temporal.io/sdk/workflow"
 )
 
 // TestScraperWorkflowIntegration tests the full workflow with scrapers
@@ -29,9 +33,16 @@ func TestScraperWorkflowIntegration(t *testing.T) {
 
 	// Mock the scraper activity
 	env.OnActivity(workflow.RunScraperActivity, mock.Anything, "bayut").Return(&workflow.ScraperActivityResult{
-		ItemsScraped: 10,
-		ItemsSaved:   10,
-		Duration:     time.Second * 5,
+		ScraperName:    "bayut",
+		ItemsFetched:   10,
+		ItemsScraped:   10,
+		ItemsValidated: 10,
+		ItemsSaved:     10,
+		Duration:       time.Second * 5,
+		Validation: services.ValidationSummary{
+			Total: 10,
+			Valid: 10,
+		},
 	}, nil)
 
 	// Execute workflow
@@ -74,9 +85,16 @@ func TestScraperWorkflowWithRetry(t *testing.T) {
 				return nil, assert.AnError
 			}
 			return &workflow.ScraperActivityResult{
-				ItemsScraped: 5,
-				ItemsSaved:   5,
-				Duration:     time.Second * 3,
+				ScraperName:    scraperName,
+				ItemsFetched:   5,
+				ItemsScraped:   5,
+				ItemsValidated: 5,
+				ItemsSaved:     5,
+				Duration:       time.Second * 3,
+				Validation: services.ValidationSummary{
+					Total: 5,
+					Valid: 5,
+				},
 			}, nil
 		},
 	)
@@ -138,20 +156,19 @@ func TestScheduledScraperWorkflowIntegration(t *testing.T) {
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
 
-	// Mock child workflows for each scraper
-	scrapers := []string{"bayut", "dubizzle"}
-	for _, scraperName := range scrapers {
-		env.OnWorkflow(workflow.ScraperWorkflow, mock.Anything, mock.MatchedBy(func(input workflow.ScraperWorkflowInput) bool {
-			return input.ScraperName == scraperName
-		})).Return(&workflow.ScraperWorkflowResult{
-			ScraperName:  scraperName,
-			ItemsScraped: 10,
-			ItemsSaved:   10,
-			Errors:       []string{},
-			Duration:     time.Second * 5,
-			CompletedAt:  time.Now(),
-		}, nil)
-	}
+	// Mock child workflows for each scraper triggered by the scheduler
+	env.OnWorkflow(workflow.ScraperWorkflow, mock.Anything, mock.Anything).Return(
+		func(ctx temporalworkflow.Context, input workflow.ScraperWorkflowInput) (*workflow.ScraperWorkflowResult, error) {
+			return &workflow.ScraperWorkflowResult{
+				ScraperName:  input.ScraperName,
+				ItemsScraped: 10,
+				ItemsSaved:   10,
+				Errors:       []string{},
+				Duration:     time.Second * 5,
+				CompletedAt:  time.Now(),
+			}, nil
+		},
+	)
 
 	// Execute scheduled workflow
 	env.ExecuteWorkflow(workflow.ScheduledScraperWorkflow)
@@ -166,35 +183,52 @@ func TestScraperServiceIntegration(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
+	bayutServer, err := helpers.NewBayutMockServer()
+	require.NoError(t, err)
+	defer bayutServer.Close()
+
+	dubizzleServer, err := helpers.NewDubizzleMockServer()
+	require.NoError(t, err)
+	defer dubizzleServer.Close()
+
 	// Create mock repository
 	mockRepo := &MockRepository{
 		items: make(map[string]*models.CostDataPoint),
 	}
 
 	// Create scraper configuration
-	config := scrapers.Config{
+	bayutConfig := scrapers.Config{
 		UserAgent:  "Mozilla/5.0 (Test)",
 		RateLimit:  10,
 		Timeout:    30,
-		MaxRetries: 3,
+		MaxRetries: 1,
+		BaseURL:    bayutServer.URL(),
 	}
+
+	dubizzleConfig := scrapers.Config{
+		UserAgent:  "Mozilla/5.0 (Test)",
+		RateLimit:  10,
+		Timeout:    30,
+		MaxRetries: 1,
+		BaseURL:    dubizzleServer.URL(),
+	}
+
+	logger.Init()
 
 	// Create scraper service
 	scraperService := services.NewScraperService(mockRepo)
 
 	// Register scrapers
-	scraperService.RegisterScraper(bayut.NewBayutScraper(config))
-	scraperService.RegisterScraper(dubizzle.NewDubizzleScraper(config))
+	scraperService.RegisterScraper(bayut.NewBayutScraper(bayutConfig))
+	scraperService.RegisterScraper(dubizzle.NewDubizzleScraper(dubizzleConfig))
 
 	// Test running a scraper
 	ctx := context.Background()
-	err := scraperService.RunScraper(ctx, "bayut")
-
-	// We expect an error since we're not connected to the real site
-	// but this tests the integration structure
-	if err != nil {
-		t.Logf("Expected error in test environment: %v", err)
-	}
+	res, err := scraperService.RunScraper(ctx, "bayut")
+	require.NoError(t, err)
+	require.NotNil(t, res)
+	assert.Greater(t, res.Saved, 0, "expected to persist scraped data points")
+	assert.Equal(t, res.Saved, len(mockRepo.items))
 }
 
 // TestBatchScrapingWorkflow tests batch processing of multiple scrapers
@@ -209,13 +243,26 @@ func TestBatchScrapingWorkflow(t *testing.T) {
 	// Mock activities for multiple scrapers
 	scrapers := []string{"bayut", "dubizzle", "bayut_abu_dhabi", "dubizzle_sharjah"}
 
-	for _, scraperName := range scrapers {
-		env.OnActivity(workflow.RunScraperActivity, mock.Anything, scraperName).Return(&workflow.ScraperActivityResult{
-			ItemsScraped: 10,
-			ItemsSaved:   10,
-			Duration:     time.Second * 5,
-		}, nil)
+	configureActivityMock := func(e *testsuite.TestWorkflowEnvironment) {
+		e.OnActivity(workflow.RunScraperActivity, mock.Anything, mock.Anything).Return(
+			func(ctx context.Context, scraperName string) (*workflow.ScraperActivityResult, error) {
+				return &workflow.ScraperActivityResult{
+					ScraperName:    scraperName,
+					ItemsFetched:   10,
+					ItemsScraped:   10,
+					ItemsValidated: 10,
+					ItemsSaved:     10,
+					Duration:       time.Second * 5,
+					Validation: services.ValidationSummary{
+						Total: 10,
+						Valid: 10,
+					},
+				}, nil
+			},
+		)
 	}
+
+	configureActivityMock(env)
 
 	// Test that all scrapers complete successfully
 	for _, scraperName := range scrapers {
@@ -230,11 +277,7 @@ func TestBatchScrapingWorkflow(t *testing.T) {
 
 		// Reset for next test
 		env = testSuite.NewTestWorkflowEnvironment()
-		env.OnActivity(workflow.RunScraperActivity, mock.Anything, scraperName).Return(&workflow.ScraperActivityResult{
-			ItemsScraped: 10,
-			ItemsSaved:   10,
-			Duration:     time.Second * 5,
-		}, nil)
+		configureActivityMock(env)
 	}
 }
 
@@ -295,20 +338,10 @@ func TestWorkflowTimeouts(t *testing.T) {
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
 
-	// Mock activity that takes too long
+	// Mock activity that immediately reports a timeout error
 	env.OnActivity(workflow.RunScraperActivity, mock.Anything, "bayut").Return(
 		func(ctx context.Context, scraperName string) (*workflow.ScraperActivityResult, error) {
-			// Simulate long-running activity
-			select {
-			case <-time.After(10 * time.Minute):
-				return &workflow.ScraperActivityResult{
-					ItemsScraped: 10,
-					ItemsSaved:   10,
-					Duration:     10 * time.Minute,
-				}, nil
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			}
+			return nil, context.DeadlineExceeded
 		},
 	)
 
@@ -321,18 +354,21 @@ func TestWorkflowTimeouts(t *testing.T) {
 	env.SetTestTimeout(5 * time.Second)
 	env.ExecuteWorkflow(workflow.ScraperWorkflow, input)
 
-	// Should timeout
+	// Should timeout and surface an error
 	require.True(t, env.IsWorkflowCompleted())
+	require.Error(t, env.GetWorkflowError())
 }
 
 // MockRepository is a mock implementation of CostDataPointRepository
 type MockRepository struct {
-	items map[string]*models.CostDataPoint
+	items  map[string]*models.CostDataPoint
+	nextID int
 }
 
 func (m *MockRepository) Create(ctx context.Context, cdp *models.CostDataPoint) error {
 	if cdp.ID == "" {
-		cdp.ID = "mock-id"
+		m.nextID++
+		cdp.ID = fmt.Sprintf("mock-id-%d", m.nextID)
 	}
 	m.items[cdp.ID] = cdp
 	return nil
@@ -358,6 +394,9 @@ func (m *MockRepository) Delete(ctx context.Context, id string, recordedAt time.
 func (m *MockRepository) List(ctx context.Context, filter repository.ListFilter) ([]*models.CostDataPoint, error) {
 	result := make([]*models.CostDataPoint, 0, len(m.items))
 	for _, item := range m.items {
+		if filter.ID != "" && item.ID != filter.ID {
+			continue
+		}
 		result = append(result, item)
 	}
 	return result, nil

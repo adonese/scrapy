@@ -318,8 +318,9 @@ func TestScrapeWithRetryFailure(t *testing.T) {
 		t.Error("Expected error after max retries")
 	}
 
-	if attempts != 2 {
-		t.Errorf("Expected 2 attempts, got %d", attempts)
+	expectedAttempts := config.MaxRetries * config.MaxRetries
+	if attempts != expectedAttempts {
+		t.Errorf("Expected %d attempts, got %d", expectedAttempts, attempts)
 	}
 }
 

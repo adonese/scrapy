@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"golang.org/x/time/rate"
@@ -30,13 +30,28 @@ type AADCScraper struct {
 
 // NewAADCScraper creates a new AADC scraper
 func NewAADCScraper(config scrapers.Config) *AADCScraper {
+	rateLimit := 1
+	if config.RateLimit > 0 {
+		rateLimit = config.RateLimit
+	}
+
+	timeout := config.Timeout
+	if timeout <= 0 {
+		timeout = 30
+	}
+
+	client := scrapers.BuildHTTPClient(config)
+
+	baseURL := strings.TrimSpace(config.BaseURL)
+	if baseURL == "" {
+		baseURL = DefaultAADCURL
+	}
+
 	return &AADCScraper{
-		config: config,
-		url:    DefaultAADCURL,
-		client: &http.Client{
-			Timeout: time.Duration(config.Timeout) * time.Second,
-		},
-		rateLimiter: rate.NewLimiter(rate.Limit(config.RateLimit), 1),
+		config:      config,
+		url:         baseURL,
+		client:      client,
+		rateLimiter: rate.NewLimiter(rate.Limit(rateLimit), 1),
 	}
 }
 
@@ -66,29 +81,9 @@ func (s *AADCScraper) Scrape(ctx context.Context) ([]*models.CostDataPoint, erro
 		return nil, fmt.Errorf("rate limit wait: %w", err)
 	}
 
-	// Fetch the page
-	req, err := http.NewRequestWithContext(ctx, "GET", s.url, nil)
+	doc, err := s.fetchDocument(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
-	}
-	req.Header.Set("User-Agent", s.config.UserAgent)
-
-	resp, err := s.client.Do(req)
-	if err != nil {
-		metrics.ScraperErrorsTotal.WithLabelValues("aadc", "fetch").Inc()
-		return nil, fmt.Errorf("fetch page: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		metrics.ScraperErrorsTotal.WithLabelValues("aadc", "status").Inc()
-		return nil, fmt.Errorf("bad status: %d", resp.StatusCode)
-	}
-
-	// Parse HTML
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("parse html: %w", err)
+		return nil, err
 	}
 
 	// Parse rates
@@ -99,9 +94,68 @@ func (s *AADCScraper) Scrape(ctx context.Context) ([]*models.CostDataPoint, erro
 	}
 
 	logger.Info("Completed AADC scrape", "count", len(dataPoints))
-	metrics.ScraperItemsScraped.WithLabelValues("aadc").Add(float64(len(dataPoints)))
+	metrics.ScraperItemsScraped.WithLabelValues(s.Name()).Add(float64(len(dataPoints)))
 
 	return dataPoints, nil
+}
+
+func (s *AADCScraper) fetchDocument(ctx context.Context) (*goquery.Document, error) {
+	maxRetries := s.config.EffectiveMaxRetries()
+	var lastErr error
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		if attempt > 0 {
+			logger.Info("Retrying AADC fetch", "attempt", attempt+1)
+			if err := scrapers.WaitRetry(ctx, s.config, attempt-1); err != nil {
+				return nil, err
+			}
+		}
+
+		if err := scrapers.DelayBetweenRequests(ctx, s.config); err != nil {
+			return nil, err
+		}
+
+		req, err := scrapers.PrepareRequest(ctx, http.MethodGet, s.url, nil, s.config)
+		if err != nil {
+			return nil, fmt.Errorf("create request: %w", err)
+		}
+
+		resp, err := s.client.Do(req)
+		if err != nil {
+			metrics.ScraperErrorsTotal.WithLabelValues("aadc", "fetch").Inc()
+			lastErr = fmt.Errorf("fetch page: %w", err)
+			continue
+		}
+
+		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusForbidden {
+			metrics.ScraperErrorsTotal.WithLabelValues("aadc", "blocked").Inc()
+			lastErr = fmt.Errorf("blocked by anti-bot (status %d)", resp.StatusCode)
+			resp.Body.Close()
+			continue
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			metrics.ScraperErrorsTotal.WithLabelValues("aadc", "status").Inc()
+			lastErr = fmt.Errorf("bad status: %d", resp.StatusCode)
+			resp.Body.Close()
+			continue
+		}
+
+		doc, err := goquery.NewDocumentFromReader(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			lastErr = fmt.Errorf("parse html: %w", err)
+			continue
+		}
+
+		return doc, nil
+	}
+
+	if lastErr != nil {
+		return nil, lastErr
+	}
+
+	return nil, fmt.Errorf("failed after %d attempts", maxRetries)
 }
 
 // parseRates extracts all utility rates from the document
