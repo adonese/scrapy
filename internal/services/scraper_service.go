@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -27,6 +28,27 @@ type ScraperServiceConfig struct {
 	MinQualityScore    float64 // Minimum quality score to save data (default: 0.7)
 	FailOnValidation   bool    // Fail scrape if validation fails
 	ValidateBeforeSave bool    // Validate data before saving to DB
+}
+
+// ValidationSummary captures how many data points passed validation and why
+// others were discarded.
+type ValidationSummary struct {
+	Total      int
+	Valid      int
+	Invalid    int
+	LowQuality int
+	Skipped    bool
+}
+
+// ScrapeResult represents the outcome of running a scraper end-to-end.
+type ScrapeResult struct {
+	ScraperName  string
+	Fetched      int
+	Validation   ValidationSummary
+	Saved        int
+	SaveFailures int
+	Duration     time.Duration
+	Errors       []error
 }
 
 // DefaultScraperServiceConfig returns default configuration
@@ -60,9 +82,10 @@ func (s *ScraperService) RegisterScraper(scraper scrapers.Scraper) {
 	logger.Info("Registered scraper", "name", scraper.Name())
 }
 
-// RunScraper runs a specific scraper by name
-func (s *ScraperService) RunScraper(ctx context.Context, scraperName string) error {
+// RunScraper runs a specific scraper by name and returns a detailed summary.
+func (s *ScraperService) RunScraper(ctx context.Context, scraperName string) (*ScrapeResult, error) {
 	start := time.Now()
+	result := &ScrapeResult{ScraperName: scraperName}
 
 	// Find scraper
 	var targetScraper scrapers.Scraper
@@ -74,74 +97,118 @@ func (s *ScraperService) RunScraper(ctx context.Context, scraperName string) err
 	}
 
 	if targetScraper == nil {
-		return fmt.Errorf("scraper not found: %s", scraperName)
+		err := fmt.Errorf("scraper not found: %s", scraperName)
+		result.Errors = append(result.Errors, err)
+		result.Duration = time.Since(start)
+		return result, err
 	}
 
-	// Check if can scrape
+	// Check if the scraper can run within rate limits
 	if !targetScraper.CanScrape() {
-		return fmt.Errorf("rate limit exceeded")
+		err := fmt.Errorf("rate limit exceeded")
+		metrics.ScraperRunsTotal.WithLabelValues(scraperName, "error").Inc()
+		result.Errors = append(result.Errors, err)
+		result.Duration = time.Since(start)
+		return result, err
 	}
 
-	// Run scraper
 	logger.Info("Running scraper", "name", scraperName)
-	dataPoints, err := targetScraper.Scrape(ctx)
 
-	// Record duration
-	duration := time.Since(start).Seconds()
-	metrics.ScraperDuration.WithLabelValues(scraperName).Observe(duration)
+	// Execute scraper
+	dataPoints, err := targetScraper.Scrape(ctx)
+	result.Fetched = len(dataPoints)
 
 	if err != nil {
 		metrics.ScraperRunsTotal.WithLabelValues(scraperName, "error").Inc()
-		return fmt.Errorf("scrape failed: %w", err)
+		wrapped := fmt.Errorf("scrape failed: %w", err)
+		result.Errors = append(result.Errors, wrapped)
+		result.Duration = time.Since(start)
+		return result, wrapped
 	}
 
-	// Validate data points if enabled
+	// Validate data points when enabled
 	validatedPoints := dataPoints
+	summary := ValidationSummary{Total: len(dataPoints), Valid: len(dataPoints), Skipped: true}
 	if s.config.EnableValidation && s.config.ValidateBeforeSave {
-		validatedPoints = s.validateAndFilter(ctx, dataPoints, scraperName)
+		summary.Skipped = false
+		var validationErr error
+		validatedPoints, summary, validationErr = s.validateAndFilter(ctx, dataPoints, scraperName)
 		logger.Info("Validation completed",
 			"scraper", scraperName,
-			"original", len(dataPoints),
-			"validated", len(validatedPoints))
-	}
+			"total", summary.Total,
+			"valid", summary.Valid,
+			"invalid", summary.Invalid,
+			"low_quality", summary.LowQuality,
+			"skipped", summary.Skipped)
 
-	// Save to database
+		if validationErr != nil {
+			metrics.ScraperRunsTotal.WithLabelValues(scraperName, "error").Inc()
+			result.Validation = summary
+			result.Errors = append(result.Errors, validationErr)
+			result.Duration = time.Since(start)
+			return result, validationErr
+		}
+	}
+	result.Validation = summary
+
+	// Persist validated data points
 	saved := 0
 	failed := 0
 	for _, dp := range validatedPoints {
 		if err := s.repo.Create(ctx, dp); err != nil {
 			logger.Error("Failed to save data point", "error", err, "item", dp.ItemName)
 			failed++
+			result.Errors = append(result.Errors, err)
 			continue
 		}
 		saved++
 	}
 
-	// Record metrics
+	result.Saved = saved
+	result.SaveFailures = failed
+
 	if failed > 0 {
 		metrics.ScraperErrorsTotal.WithLabelValues(scraperName, "save_failed").Add(float64(failed))
 	}
 
+	result.Duration = time.Since(start)
+	metrics.ScraperDuration.WithLabelValues(scraperName).Observe(result.Duration.Seconds())
+
 	metrics.ScraperRunsTotal.WithLabelValues(scraperName, "success").Inc()
 	logger.Info("Scraper completed",
 		"name", scraperName,
-		"scraped", len(dataPoints),
-		"validated", len(validatedPoints),
-		"saved", saved,
-		"failed", failed)
+		"scraped", result.Fetched,
+		"validated", result.Validation.Valid,
+		"dropped_invalid", result.Validation.Invalid,
+		"dropped_low_quality", result.Validation.LowQuality,
+		"saved", result.Saved,
+		"failed", result.SaveFailures,
+		"duration", result.Duration)
 
-	return nil
+	return result, nil
 }
 
 // RunAllScrapers runs all registered scrapers
-func (s *ScraperService) RunAllScrapers(ctx context.Context) error {
+func (s *ScraperService) RunAllScrapers(ctx context.Context) ([]*ScrapeResult, error) {
+	results := make([]*ScrapeResult, 0, len(s.scrapers))
+	var errs []error
+
 	for _, scraper := range s.scrapers {
-		if err := s.RunScraper(ctx, scraper.Name()); err != nil {
+		result, err := s.RunScraper(ctx, scraper.Name())
+		if result != nil {
+			results = append(results, result)
+		}
+		if err != nil {
 			logger.Error("Scraper failed", "name", scraper.Name(), "error", err)
-			// Continue with other scrapers
+			errs = append(errs, fmt.Errorf("%s: %w", scraper.Name(), err))
 		}
 	}
-	return nil
+
+	if len(errs) > 0 {
+		return results, errors.Join(errs...)
+	}
+
+	return results, nil
 }
 
 // ListScrapers returns the names of all registered scrapers
@@ -154,62 +221,77 @@ func (s *ScraperService) ListScrapers() []string {
 }
 
 // validateAndFilter validates data points and filters out invalid ones
-func (s *ScraperService) validateAndFilter(ctx context.Context, dataPoints []*models.CostDataPoint, scraperName string) []*models.CostDataPoint {
+func (s *ScraperService) validateAndFilter(ctx context.Context, dataPoints []*models.CostDataPoint, scraperName string) ([]*models.CostDataPoint, ValidationSummary, error) {
+	summary := ValidationSummary{Total: len(dataPoints)}
+
 	if len(dataPoints) == 0 {
-		return dataPoints
+		summary.Valid = 0
+		summary.Skipped = true
+		return dataPoints, summary, nil
+	}
+
+	if !s.config.EnableValidation || !s.config.ValidateBeforeSave {
+		summary.Valid = len(dataPoints)
+		summary.Skipped = true
+		return dataPoints, summary, nil
 	}
 
 	// Validate batch
 	results, err := s.validator.ValidateBatch(ctx, dataPoints)
 	if err != nil {
 		logger.Error("Validation failed", "scraper", scraperName, "error", err)
-		// Return original data points if validation fails and FailOnValidation is false
 		if !s.config.FailOnValidation {
-			return dataPoints
+			summary.Valid = len(dataPoints)
+			summary.Skipped = true
+			return dataPoints, summary, nil
 		}
-		return nil
+
+		summary.Invalid = len(dataPoints)
+		return nil, summary, fmt.Errorf("validation failed: %w", err)
 	}
 
 	// Filter valid data points
 	validPoints := make([]*models.CostDataPoint, 0, len(dataPoints))
-	invalidCount := 0
-	lowQualityCount := 0
 
 	for i, result := range results {
 		if result.IsValid && result.Score >= s.config.MinQualityScore {
 			validPoints = append(validPoints, dataPoints[i])
+			continue
+		}
+
+		if !result.IsValid {
+			summary.Invalid++
+			logger.Warn("Invalid data point",
+				"scraper", scraperName,
+				"item", dataPoints[i].ItemName,
+				"errors", len(result.Errors))
 		} else {
-			if !result.IsValid {
-				invalidCount++
-				logger.Warn("Invalid data point",
-					"scraper", scraperName,
-					"item", dataPoints[i].ItemName,
-					"errors", len(result.Errors))
-			} else {
-				lowQualityCount++
-				logger.Warn("Low quality data point",
-					"scraper", scraperName,
-					"item", dataPoints[i].ItemName,
-					"score", result.Score,
-					"min_required", s.config.MinQualityScore)
-			}
+			summary.LowQuality++
+			logger.Warn("Low quality data point",
+				"scraper", scraperName,
+				"item", dataPoints[i].ItemName,
+				"score", result.Score,
+				"min_required", s.config.MinQualityScore)
 		}
 	}
 
+	summary.Valid = len(validPoints)
+
 	// Record validation metrics
-	if invalidCount > 0 {
-		metrics.ScraperErrorsTotal.WithLabelValues(scraperName, "validation_failed").Add(float64(invalidCount))
+	if summary.Invalid > 0 {
+		metrics.ScraperErrorsTotal.WithLabelValues(scraperName, "validation_failed").Add(float64(summary.Invalid))
 	}
-	if lowQualityCount > 0 {
-		metrics.ScraperErrorsTotal.WithLabelValues(scraperName, "low_quality").Add(float64(lowQualityCount))
+	if summary.LowQuality > 0 {
+		metrics.ScraperErrorsTotal.WithLabelValues(scraperName, "low_quality").Add(float64(summary.LowQuality))
 	}
 
 	logger.Info("Validation filtering complete",
 		"scraper", scraperName,
-		"total", len(dataPoints),
-		"valid", len(validPoints),
-		"invalid", invalidCount,
-		"low_quality", lowQualityCount)
+		"total", summary.Total,
+		"valid", summary.Valid,
+		"invalid", summary.Invalid,
+		"low_quality", summary.LowQuality,
+		"skipped", summary.Skipped)
 
-	return validPoints
+	return validPoints, summary, nil
 }

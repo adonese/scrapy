@@ -41,20 +41,25 @@ func NewCareemScraperWithSources(config scrapers.Config, customSources []RateSou
 			NewAPISource(""), // No API key by default
 
 			// High priority: Help center
-			NewHelpCenterSource(config.UserAgent),
+			NewHelpCenterSource(config.EffectiveUserAgent()),
 
 			// Medium priority: News sources
-			NewNewsSource(config.UserAgent),
+			NewNewsSource(config.EffectiveUserAgent()),
 
 			// Fallback: Static file with known rates
 			NewStaticSource(GetDefaultStaticSourcePath()),
 		}
 	}
 
+	rateLimit := config.RateLimit
+	if rateLimit <= 0 {
+		rateLimit = 1
+	}
+
 	return &CareemScraper{
 		config:      config,
 		aggregator:  NewSourceAggregator(sources),
-		rateLimiter: rate.NewLimiter(rate.Limit(config.RateLimit), 1),
+		rateLimiter: rate.NewLimiter(rate.Limit(rateLimit), 1),
 	}
 }
 

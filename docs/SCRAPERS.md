@@ -63,10 +63,19 @@ type Scraper interface {
 ```go
 type Config struct {
     UserAgent  string
-    RateLimit  int    // requests per second
-    Timeout    int    // seconds
+    UserAgents []string
+    RateLimit  int           // requests per second
+    Timeout    int           // seconds
     MaxRetries int
-    ProxyURL   string // optional
+    ProxyURL   string        // optional forward proxy
+    ExtraHeaders map[string]string
+
+    MinDelayBetweenRequests time.Duration
+    MaxDelayBetweenRequests time.Duration
+    RetryBaseDelay          time.Duration
+
+    BaseURL    string
+    HTTPClient *http.Client
 }
 ```
 
@@ -550,10 +559,17 @@ schedules := map[string]string{
 // Default config for all scrapers
 defaultConfig := scrapers.Config{
     UserAgent:  "UAE-Cost-of-Living-Bot/1.0 (+https://example.com/bot)",
-    RateLimit:  1,      // 1 request per second (conservative)
-    Timeout:    30,     // 30 seconds
-    MaxRetries: 3,      // 3 retry attempts
-    ProxyURL:   "",     // No proxy by default
+    UserAgents: []string{
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
+    },
+    RateLimit:               1,      // 1 request per second (conservative)
+    Timeout:                 30,     // 30 seconds
+    MaxRetries:              3,      // 3 retry attempts
+    ProxyURL:                "",     // No proxy by default
+    MinDelayBetweenRequests: 500 * time.Millisecond,
+    MaxDelayBetweenRequests: 1500 * time.Millisecond,
+    RetryBaseDelay:          2 * time.Second,
 }
 ```
 
@@ -563,9 +579,13 @@ defaultConfig := scrapers.Config{
 // Housing scrapers (higher rate limits acceptable)
 housingConfig := scrapers.Config{
     UserAgent:  "UAE-Cost-of-Living-Bot/1.0",
-    RateLimit:  2,      // 2 req/sec
-    Timeout:    60,     // Longer timeout for complex pages
-    MaxRetries: 5,      // More retries for anti-bot handling
+    UserAgents: []string{"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"},
+    RateLimit:               2,      // 2 req/sec
+    Timeout:                 60,     // Longer timeout for complex pages
+    MaxRetries:              5,      // More retries for anti-bot handling
+    MinDelayBetweenRequests: 400 * time.Millisecond,
+    MaxDelayBetweenRequests: 1200 * time.Millisecond,
+    RetryBaseDelay:          1500 * time.Millisecond,
 }
 
 // Utility scrapers (conservative, respect government sites)
@@ -574,14 +594,21 @@ utilityConfig := scrapers.Config{
     RateLimit:  1,      // 1 req/sec (respectful)
     Timeout:    30,
     MaxRetries: 3,
+    MinDelayBetweenRequests: 750 * time.Millisecond,
+    MaxDelayBetweenRequests: 2 * time.Second,
+    RetryBaseDelay:          2500 * time.Millisecond,
 }
 
 // Careem (multiple sources, longer timeout)
 careemConfig := scrapers.Config{
     UserAgent:  "Mozilla/5.0 (compatible; Bot/1.0)",
-    RateLimit:  2,
-    Timeout:    120,    // 2 minutes (multi-source aggregation)
-    MaxRetries: 5,
+    UserAgents: []string{"Mozilla/5.0 (iPhone; CPU iPhone OS 16_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.4 Mobile/15E148 Safari/604.1"},
+    RateLimit:               2,
+    Timeout:                 120,    // 2 minutes (multi-source aggregation)
+    MaxRetries:              5,
+    MinDelayBetweenRequests: 500 * time.Millisecond,
+    MaxDelayBetweenRequests: 2 * time.Second,
+    RetryBaseDelay:          2 * time.Second,
 }
 ```
 

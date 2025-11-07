@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"golang.org/x/time/rate"
@@ -30,13 +30,28 @@ type RTAScraper struct {
 
 // NewRTAScraper creates a new RTA scraper
 func NewRTAScraper(config scrapers.Config) *RTAScraper {
+	rateLimit := 1
+	if config.RateLimit > 0 {
+		rateLimit = config.RateLimit
+	}
+
+	timeout := config.Timeout
+	if timeout <= 0 {
+		timeout = 30
+	}
+
+	client := scrapers.BuildHTTPClient(config)
+
+	baseURL := strings.TrimSpace(config.BaseURL)
+	if baseURL == "" {
+		baseURL = DefaultRTAURL
+	}
+
 	return &RTAScraper{
-		config: config,
-		url:    DefaultRTAURL,
-		client: &http.Client{
-			Timeout: time.Duration(config.Timeout) * time.Second,
-		},
-		rateLimiter: rate.NewLimiter(rate.Limit(config.RateLimit), 1),
+		config:      config,
+		url:         baseURL,
+		client:      client,
+		rateLimiter: rate.NewLimiter(rate.Limit(rateLimit), 1),
 	}
 }
 
@@ -67,29 +82,9 @@ func (s *RTAScraper) Scrape(ctx context.Context) ([]*models.CostDataPoint, error
 		return nil, fmt.Errorf("rate limit wait: %w", err)
 	}
 
-	// Fetch the page
-	req, err := http.NewRequestWithContext(ctx, "GET", s.url, nil)
+	doc, err := s.fetchDocument(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
-	}
-	req.Header.Set("User-Agent", s.config.UserAgent)
-
-	resp, err := s.client.Do(req)
-	if err != nil {
-		metrics.ScraperErrorsTotal.WithLabelValues("rta", "fetch").Inc()
-		return nil, fmt.Errorf("fetch page: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		metrics.ScraperErrorsTotal.WithLabelValues("rta", "status").Inc()
-		return nil, fmt.Errorf("bad status: %d", resp.StatusCode)
-	}
-
-	// Parse HTML
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("parse html: %w", err)
+		return nil, err
 	}
 
 	// Parse fares from the document
@@ -106,18 +101,74 @@ func (s *RTAScraper) Scrape(ctx context.Context) ([]*models.CostDataPoint, error
 	}
 
 	logger.Info("Completed RTA scrape", "count", len(dataPoints))
-	metrics.ScraperItemsScraped.WithLabelValues("rta").Add(float64(len(dataPoints)))
+	metrics.ScraperItemsScraped.WithLabelValues(s.Name()).Add(float64(len(dataPoints)))
 
 	return dataPoints, nil
+}
+
+func (s *RTAScraper) fetchDocument(ctx context.Context) (*goquery.Document, error) {
+	maxRetries := s.config.EffectiveMaxRetries()
+	var lastErr error
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		if attempt > 0 {
+			logger.Info("Retrying RTA fetch", "attempt", attempt+1)
+			if err := scrapers.WaitRetry(ctx, s.config, attempt-1); err != nil {
+				return nil, err
+			}
+		}
+
+		if err := scrapers.DelayBetweenRequests(ctx, s.config); err != nil {
+			return nil, err
+		}
+
+		req, err := scrapers.PrepareRequest(ctx, http.MethodGet, s.url, nil, s.config)
+		if err != nil {
+			return nil, fmt.Errorf("create request: %w", err)
+		}
+
+		resp, err := s.client.Do(req)
+		if err != nil {
+			metrics.ScraperErrorsTotal.WithLabelValues("rta", "fetch").Inc()
+			lastErr = fmt.Errorf("fetch page: %w", err)
+			continue
+		}
+
+		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusForbidden {
+			metrics.ScraperErrorsTotal.WithLabelValues("rta", "blocked").Inc()
+			lastErr = fmt.Errorf("blocked by anti-bot (status %d)", resp.StatusCode)
+			resp.Body.Close()
+			continue
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			metrics.ScraperErrorsTotal.WithLabelValues("rta", "status").Inc()
+			lastErr = fmt.Errorf("bad status: %d", resp.StatusCode)
+			resp.Body.Close()
+			continue
+		}
+
+		doc, err := goquery.NewDocumentFromReader(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			lastErr = fmt.Errorf("parse html: %w", err)
+			continue
+		}
+
+		return doc, nil
+	}
+
+	if lastErr != nil {
+		return nil, lastErr
+	}
+
+	return nil, fmt.Errorf("failed after %d attempts", maxRetries)
 }
 
 // ScrapeWithRetry performs scraping with retry logic
 func (s *RTAScraper) ScrapeWithRetry(ctx context.Context) ([]*models.CostDataPoint, error) {
 	var lastErr error
-	maxRetries := s.config.MaxRetries
-	if maxRetries <= 0 {
-		maxRetries = 3
-	}
+	maxRetries := s.config.EffectiveMaxRetries()
 
 	for attempt := 1; attempt <= maxRetries; attempt++ {
 		logger.Info("RTA scrape attempt", "attempt", attempt, "max_retries", maxRetries)
@@ -137,14 +188,9 @@ func (s *RTAScraper) ScrapeWithRetry(ctx context.Context) ([]*models.CostDataPoi
 
 		// Exponential backoff before retry
 		if attempt < maxRetries {
-			backoff := time.Duration(attempt*attempt) * time.Second
-			logger.Info("Retrying after backoff", "backoff", backoff)
-
-			select {
-			case <-time.After(backoff):
-				// Continue to next attempt
-			case <-ctx.Done():
-				return nil, ctx.Err()
+			logger.Info("Retrying after backoff", "attempt", attempt)
+			if err := scrapers.WaitRetry(ctx, s.config, attempt-1); err != nil {
+				return nil, err
 			}
 		}
 	}

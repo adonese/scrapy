@@ -152,8 +152,8 @@ func triggerScrapers(ctx context.Context, c client.Client, scraperNames, categor
 		if len(sr.Errors) > 0 {
 			status = "✗ FAILED"
 		}
-		fmt.Printf("%s - %s: scraped=%d saved=%d duration=%s\n",
-			status, sr.ScraperName, sr.ItemsScraped, sr.ItemsSaved, sr.Duration)
+		fmt.Printf("%s - %s: scraped=%d validated=%d saved=%d save_failures=%d duration=%s\n",
+			status, sr.ScraperName, sr.ItemsScraped, sr.Validation.Valid, sr.ItemsSaved, sr.SaveFailures, sr.Duration)
 		if len(sr.Errors) > 0 {
 			fmt.Printf("  Error: %s\n", sr.Errors[0])
 		}

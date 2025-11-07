@@ -23,6 +23,7 @@ type DubizzleScraper struct {
 	rateLimiter *rate.Limiter
 	emirate     string // Dubai, Sharjah, Ajman, Abu Dhabi, etc.
 	category    string // apartmentflat, bedspace, roomspace
+	baseURL     string
 }
 
 // NewDubizzleScraper creates a new Dubizzle scraper for Dubai apartments (default)
@@ -32,15 +33,33 @@ func NewDubizzleScraper(config scrapers.Config) *DubizzleScraper {
 
 // NewDubizzleScraperFor creates a new Dubizzle scraper for a specific emirate and category
 func NewDubizzleScraperFor(config scrapers.Config, emirate, category string) *DubizzleScraper {
-	return &DubizzleScraper{
-		config:   config,
-		emirate:  emirate,
-		category: category,
-		client: &http.Client{
-			Timeout: time.Duration(config.Timeout) * time.Second,
-		},
-		rateLimiter: rate.NewLimiter(rate.Limit(config.RateLimit), 1),
+	rateLimit := 1
+	if config.RateLimit > 0 {
+		rateLimit = config.RateLimit
 	}
+
+	timeout := config.Timeout
+	if timeout <= 0 {
+		timeout = 30
+	}
+
+	client := scrapers.BuildHTTPClient(config)
+
+	scraper := &DubizzleScraper{
+		config:      config,
+		emirate:     emirate,
+		category:    category,
+		client:      client,
+		rateLimiter: rate.NewLimiter(rate.Limit(rateLimit), 1),
+	}
+
+	baseURL := strings.TrimRight(config.BaseURL, "/")
+	if baseURL == "" {
+		baseURL = fmt.Sprintf("https://%s.dubizzle.com", scraper.emirateToSubdomain(emirate))
+	}
+	scraper.baseURL = baseURL
+
+	return scraper
 }
 
 // Name returns the scraper identifier
@@ -89,31 +108,25 @@ func (s *DubizzleScraper) Scrape(ctx context.Context) ([]*models.CostDataPoint, 
 func (s *DubizzleScraper) fetchWithRetry(ctx context.Context, url string) ([]*models.CostDataPoint, error) {
 	var lastErr error
 
-	for attempt := 0; attempt < s.config.MaxRetries; attempt++ {
+	maxRetries := s.config.EffectiveMaxRetries()
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
 		if attempt > 0 {
-			// Wait between retries with exponential backoff
-			waitTime := time.Duration(attempt) * time.Second
-			logger.Info("Retrying fetch", "attempt", attempt+1, "wait", waitTime)
-			select {
-			case <-time.After(waitTime):
-			case <-ctx.Done():
-				return nil, ctx.Err()
+			logger.Info("Retrying fetch", "attempt", attempt+1)
+			if err := scrapers.WaitRetry(ctx, s.config, attempt-1); err != nil {
+				return nil, err
 			}
 		}
 
-		// Fetch the page
-		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+		if err := scrapers.DelayBetweenRequests(ctx, s.config); err != nil {
+			return nil, err
+		}
+
+		// Fetch the page with rotated headers.
+		req, err := scrapers.PrepareRequest(ctx, http.MethodGet, url, nil, s.config)
 		if err != nil {
 			return nil, fmt.Errorf("create request: %w", err)
 		}
-
-		// Set headers to appear more like a real browser
-		req.Header.Set("User-Agent", s.config.UserAgent)
-		req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
-		req.Header.Set("Accept-Language", "en-US,en;q=0.9")
-		req.Header.Set("Accept-Encoding", "gzip, deflate, br")
-		req.Header.Set("Connection", "keep-alive")
-		req.Header.Set("Upgrade-Insecure-Requests", "1")
 
 		resp, err := s.client.Do(req)
 		if err != nil {
@@ -121,18 +134,19 @@ func (s *DubizzleScraper) fetchWithRetry(ctx context.Context, url string) ([]*mo
 			lastErr = fmt.Errorf("fetch page: %w", err)
 			continue
 		}
-		defer resp.Body.Close()
 
 		// Check for bot detection or rate limiting
 		if resp.StatusCode == 429 || resp.StatusCode == 403 {
 			metrics.ScraperErrorsTotal.WithLabelValues("dubizzle", "blocked").Inc()
 			lastErr = fmt.Errorf("blocked by anti-bot (status %d)", resp.StatusCode)
+			resp.Body.Close()
 			continue
 		}
 
 		if resp.StatusCode != 200 {
 			metrics.ScraperErrorsTotal.WithLabelValues("dubizzle", "status").Inc()
 			lastErr = fmt.Errorf("bad status: %d", resp.StatusCode)
+			resp.Body.Close()
 			continue
 		}
 
@@ -140,8 +154,10 @@ func (s *DubizzleScraper) fetchWithRetry(ctx context.Context, url string) ([]*mo
 		doc, err := goquery.NewDocumentFromReader(resp.Body)
 		if err != nil {
 			lastErr = fmt.Errorf("parse html: %w", err)
+			resp.Body.Close()
 			continue
 		}
+		resp.Body.Close()
 
 		// Check if we got an error page or empty result
 		if s.isErrorPage(doc) {
@@ -166,7 +182,7 @@ func (s *DubizzleScraper) fetchWithRetry(ctx context.Context, url string) ([]*mo
 	if lastErr != nil {
 		return nil, lastErr
 	}
-	return nil, fmt.Errorf("failed after %d attempts", s.config.MaxRetries)
+	return nil, fmt.Errorf("failed after %d attempts", maxRetries)
 }
 
 // isErrorPage checks if the document is an error/block page
@@ -336,11 +352,7 @@ func (scraper *DubizzleScraper) extractListing(sel *goquery.Selection, baseURL s
 	// Extract URL
 	propertyURL := ""
 	if href, exists := sel.Find("a").First().Attr("href"); exists {
-		if strings.HasPrefix(href, "http") {
-			propertyURL = href
-		} else if strings.HasPrefix(href, "/") {
-			propertyURL = "https://dubai.dubizzle.com" + href
-		}
+		propertyURL = scraper.resolveURL(href)
 	}
 
 	// Validate we have minimum required data
@@ -396,7 +408,7 @@ func (s *DubizzleScraper) extractWithGeneralApproach(doc *goquery.Document, base
 		priceText := card.Find("span, div, p").FilterFunction(func(_ int, sel *goquery.Selection) bool {
 			text := sel.Text()
 			return strings.Contains(text, "AED") || strings.Contains(text, "aed") ||
-				   strings.Contains(text, "Dhs") || strings.Contains(text, "DHS")
+				strings.Contains(text, "Dhs") || strings.Contains(text, "DHS")
 		}).First().Text()
 
 		price := parsePrice(priceText)
@@ -418,11 +430,7 @@ func (s *DubizzleScraper) extractWithGeneralApproach(doc *goquery.Document, base
 		// Get URL
 		href, _ := link.Attr("href")
 		propertyURL := ""
-		if strings.HasPrefix(href, "http") {
-			propertyURL = href
-		} else if strings.HasPrefix(href, "/") {
-			propertyURL = "https://dubai.dubizzle.com" + href
-		}
+		propertyURL = s.resolveURL(href)
 
 		now := time.Now()
 
@@ -443,15 +451,15 @@ func (s *DubizzleScraper) extractWithGeneralApproach(doc *goquery.Document, base
 				Emirate: s.emirate,
 				City:    s.emirate,
 			},
-			Source:      "dubizzle",
-			SourceURL:   propertyURL,
-			Confidence:  0.5, // Lower confidence for general approach
-			Unit:        "AED",
-			RecordedAt:  now,
-			ValidFrom:   now,
-			SampleSize:  1,
-			Tags:        tags,
-			Attributes:  map[string]interface{}{},
+			Source:     "dubizzle",
+			SourceURL:  propertyURL,
+			Confidence: 0.5, // Lower confidence for general approach
+			Unit:       "AED",
+			RecordedAt: now,
+			ValidFrom:  now,
+			SampleSize: 1,
+			Tags:       tags,
+			Attributes: map[string]interface{}{},
 		})
 	})
 
@@ -460,9 +468,8 @@ func (s *DubizzleScraper) extractWithGeneralApproach(doc *goquery.Document, base
 
 // buildURL constructs the Dubizzle URL for the emirate and category
 func (s *DubizzleScraper) buildURL() string {
-	emiratePath := s.emirateToSubdomain(s.emirate)
 	categoryPath := s.categoryToPath(s.category)
-	return fmt.Sprintf("https://%s.dubizzle.com/property-for-rent/residential/%s/", emiratePath, categoryPath)
+	return fmt.Sprintf("%s/property-for-rent/residential/%s/", strings.TrimRight(s.baseURL, "/"), categoryPath)
 }
 
 // emirateToSubdomain converts emirate name to Dubizzle subdomain format
@@ -508,4 +515,26 @@ func (s *DubizzleScraper) getSubCategoryFromCategory() string {
 	default:
 		return "Rent"
 	}
+}
+
+func (s *DubizzleScraper) resolveURL(href string) string {
+	if href == "" {
+		return ""
+	}
+
+	href = strings.TrimSpace(href)
+	if strings.HasPrefix(href, "http://") || strings.HasPrefix(href, "https://") {
+		return href
+	}
+
+	if strings.HasPrefix(href, "//") {
+		return "https:" + href
+	}
+
+	base := strings.TrimRight(s.baseURL, "/")
+	if !strings.HasPrefix(href, "/") {
+		href = "/" + href
+	}
+
+	return base + href
 }

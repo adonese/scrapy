@@ -1,6 +1,7 @@
 package workflow
 
 import (
+	"strings"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
@@ -10,7 +11,8 @@ import (
 type ScraperSchedule struct {
 	Name      string
 	Frequency time.Duration
-	Priority  int // Lower number = higher priority
+	Priority  int    // Lower number = higher priority
+	Category  string // Logical scraper grouping (housing, utilities, transportation, rideshare)
 	Enabled   bool
 }
 
@@ -24,27 +26,27 @@ func DefaultSchedulerConfig() *SchedulerConfig {
 	return &SchedulerConfig{
 		Schedules: []ScraperSchedule{
 			// Housing scrapers - Daily (high priority)
-			{Name: "bayut-Dubai", Frequency: 24 * time.Hour, Priority: 1, Enabled: true},
-			{Name: "bayut-Sharjah", Frequency: 24 * time.Hour, Priority: 1, Enabled: true},
-			{Name: "bayut-Ajman", Frequency: 24 * time.Hour, Priority: 1, Enabled: true},
-			{Name: "bayut-Abu Dhabi", Frequency: 24 * time.Hour, Priority: 1, Enabled: true},
-			{Name: "dubizzle-Dubai-apartmentflat", Frequency: 24 * time.Hour, Priority: 1, Enabled: true},
-			{Name: "dubizzle-Sharjah-apartmentflat", Frequency: 24 * time.Hour, Priority: 1, Enabled: true},
-			{Name: "dubizzle-Ajman-apartmentflat", Frequency: 24 * time.Hour, Priority: 1, Enabled: true},
-			{Name: "dubizzle-Abu Dhabi-apartmentflat", Frequency: 24 * time.Hour, Priority: 1, Enabled: true},
-			{Name: "dubizzle-Dubai-bedspace", Frequency: 24 * time.Hour, Priority: 2, Enabled: true},
-			{Name: "dubizzle-Dubai-roomspace", Frequency: 24 * time.Hour, Priority: 2, Enabled: true},
+			{Name: "bayut", Frequency: 24 * time.Hour, Priority: 1, Category: "housing", Enabled: true},
+			{Name: "bayut_sharjah", Frequency: 24 * time.Hour, Priority: 1, Category: "housing", Enabled: true},
+			{Name: "bayut_ajman", Frequency: 24 * time.Hour, Priority: 1, Category: "housing", Enabled: true},
+			{Name: "bayut_abu_dhabi", Frequency: 24 * time.Hour, Priority: 1, Category: "housing", Enabled: true},
+			{Name: "dubizzle", Frequency: 24 * time.Hour, Priority: 1, Category: "housing", Enabled: true},
+			{Name: "dubizzle_sharjah", Frequency: 24 * time.Hour, Priority: 1, Category: "housing", Enabled: true},
+			{Name: "dubizzle_ajman", Frequency: 24 * time.Hour, Priority: 1, Category: "housing", Enabled: true},
+			{Name: "dubizzle_abu_dhabi", Frequency: 24 * time.Hour, Priority: 1, Category: "housing", Enabled: true},
+			{Name: "dubizzle_dubai_bedspace", Frequency: 24 * time.Hour, Priority: 2, Category: "housing", Enabled: true},
+			{Name: "dubizzle_dubai_roomspace", Frequency: 24 * time.Hour, Priority: 2, Category: "housing", Enabled: true},
 
 			// Utility scrapers - Weekly (medium priority)
-			{Name: "dewa", Frequency: 7 * 24 * time.Hour, Priority: 3, Enabled: true},
-			{Name: "sewa", Frequency: 7 * 24 * time.Hour, Priority: 3, Enabled: true},
-			{Name: "aadc", Frequency: 7 * 24 * time.Hour, Priority: 3, Enabled: true},
+			{Name: "dewa", Frequency: 7 * 24 * time.Hour, Priority: 3, Category: "utilities", Enabled: true},
+			{Name: "sewa", Frequency: 7 * 24 * time.Hour, Priority: 3, Category: "utilities", Enabled: true},
+			{Name: "aadc", Frequency: 7 * 24 * time.Hour, Priority: 3, Category: "utilities", Enabled: true},
 
 			// Transport scrapers - Weekly (medium priority)
-			{Name: "rta", Frequency: 7 * 24 * time.Hour, Priority: 4, Enabled: true},
+			{Name: "rta", Frequency: 7 * 24 * time.Hour, Priority: 4, Category: "transportation", Enabled: true},
 
 			// Ride-sharing scrapers - Monthly (low priority)
-			{Name: "careem", Frequency: 30 * 24 * time.Hour, Priority: 5, Enabled: true},
+			{Name: "careem", Frequency: 30 * 24 * time.Hour, Priority: 5, Category: "rideshare", Enabled: true},
 		},
 	}
 }
@@ -58,6 +60,9 @@ func MasterSchedulerWorkflow(ctx workflow.Context, config *SchedulerConfig) erro
 	if config == nil {
 		config = DefaultSchedulerConfig()
 	}
+
+	// Ensure schedule names are normalized and enabled entries use canonical scraper identifiers.
+	normalizeScheduleNames(config)
 
 	// Track last execution time for each scraper
 	lastExecution := make(map[string]time.Time)
@@ -113,7 +118,7 @@ func executeScheduledScraper(ctx workflow.Context, scraperName string) error {
 
 	// Configure child workflow options
 	childWorkflowOptions := workflow.ChildWorkflowOptions{
-		WorkflowID:            "scraper-" + scraperName + "-" + workflow.Now(ctx).Format("20060102-150405"),
+		WorkflowID:               "scraper-" + scraperName + "-" + workflow.Now(ctx).Format("20060102-150405"),
 		WorkflowExecutionTimeout: 30 * time.Minute,
 		WorkflowTaskTimeout:      5 * time.Minute,
 	}
@@ -242,4 +247,47 @@ func OnDemandScraperWorkflow(ctx workflow.Context, input OnDemandScraperInput) (
 		"items", result.TotalSaved)
 
 	return result, nil
+}
+
+// normalizeScheduleNames trims whitespace and enforces lowercase canonical names for schedule entries.
+func normalizeScheduleNames(config *SchedulerConfig) {
+	if config == nil {
+		return
+	}
+
+	for i := range config.Schedules {
+		normalized := strings.TrimSpace(strings.ToLower(config.Schedules[i].Name))
+		normalized = strings.ReplaceAll(normalized, "-", "_")
+		config.Schedules[i].Name = normalized
+	}
+}
+
+// getEnabledScraperNames returns the canonical scraper names that satisfy the provided filters.
+// Empty category means "any category". When maxFrequency or minFrequency are zero they are ignored.
+func getEnabledScraperNames(category string, maxFrequency, minFrequency time.Duration) []string {
+	config := DefaultSchedulerConfig()
+	normalizeScheduleNames(config)
+
+	names := make([]string, 0, len(config.Schedules))
+	for _, schedule := range config.Schedules {
+		if !schedule.Enabled {
+			continue
+		}
+
+		if category != "" && schedule.Category != category {
+			continue
+		}
+
+		if maxFrequency > 0 && schedule.Frequency > maxFrequency {
+			continue
+		}
+
+		if minFrequency > 0 && schedule.Frequency < minFrequency {
+			continue
+		}
+
+		names = append(names, schedule.Name)
+	}
+
+	return names
 }

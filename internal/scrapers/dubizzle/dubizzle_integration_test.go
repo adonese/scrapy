@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/adonese/cost-of-living/internal/scrapers"
+	"github.com/adonese/cost-of-living/pkg/logger"
 	"github.com/adonese/cost-of-living/test/helpers"
 )
 
@@ -267,18 +268,27 @@ func TestDubizzleScraperWithMockServer(t *testing.T) {
 	require.NoError(t, err)
 	defer mockServer.Close()
 
+	logger.Init()
+
 	config := scrapers.Config{
-		Timeout:    30,
-		RateLimit:  10.0,
+		Timeout:    5,
+		RateLimit:  10,
 		MaxRetries: 1,
 		UserAgent:  "Test Agent",
+		BaseURL:    mockServer.URL(),
 	}
 
-	scraper := NewDubizzleScraper(config)
+	scraper := NewDubizzleScraperFor(config, "Dubai", "apartmentflat")
 
-	t.Logf("Mock server running at: %s", mockServer.URL())
-	t.Log("Scraper name:", scraper.Name())
-	assert.Equal(t, "dubizzle", scraper.Name())
+	ctx := context.Background()
+	dataPoints, err := scraper.Scrape(ctx)
+	require.NoError(t, err)
+	assert.NotEmpty(t, dataPoints)
+
+	for _, dp := range dataPoints {
+		helpers.AssertHousingDataPoint(t, dp)
+		assert.True(t, strings.HasPrefix(dp.SourceURL, mockServer.URL()))
+	}
 }
 
 func TestDubizzleScraperNaming(t *testing.T) {

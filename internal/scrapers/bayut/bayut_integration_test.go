@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/adonese/cost-of-living/internal/scrapers"
+	"github.com/adonese/cost-of-living/pkg/logger"
 	"github.com/adonese/cost-of-living/test/helpers"
 )
 
@@ -227,6 +228,33 @@ func TestBayutScraperWithMockServer(t *testing.T) {
 
 	t.Logf("Mock server running at: %s", mockServer.URL())
 	t.Log("Mock server configured with Bayut fixtures")
+}
+
+func TestBayutScraperScrapeWithMockServer(t *testing.T) {
+	mockServer, err := helpers.NewBayutMockServer()
+	require.NoError(t, err)
+	defer mockServer.Close()
+
+	logger.Init()
+
+	config := scrapers.Config{
+		Timeout:   5,
+		RateLimit: 10,
+		UserAgent: "Test Agent",
+		BaseURL:   mockServer.URL(),
+	}
+
+	scraper := NewBayutScraper(config)
+
+	ctx := context.Background()
+	dataPoints, err := scraper.Scrape(ctx)
+	require.NoError(t, err)
+	assert.NotEmpty(t, dataPoints)
+
+	for _, dp := range dataPoints {
+		helpers.AssertHousingDataPoint(t, dp)
+		assert.True(t, strings.HasPrefix(dp.SourceURL, mockServer.URL()))
+	}
 }
 
 func TestBayutScraperLocationParsing(t *testing.T) {

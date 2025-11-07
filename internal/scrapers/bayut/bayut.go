@@ -22,6 +22,7 @@ type BayutScraper struct {
 	client      *http.Client
 	rateLimiter *rate.Limiter
 	emirate     string // Dubai, Sharjah, Ajman, Abu Dhabi, etc.
+	baseURL     string
 }
 
 // NewBayutScraper creates a new Bayut scraper for Dubai (default)
@@ -31,13 +32,29 @@ func NewBayutScraper(config scrapers.Config) *BayutScraper {
 
 // NewBayutScraperForEmirate creates a new Bayut scraper for a specific emirate
 func NewBayutScraperForEmirate(config scrapers.Config, emirate string) *BayutScraper {
+	rateLimit := 1
+	if config.RateLimit > 0 {
+		rateLimit = config.RateLimit
+	}
+
+	timeout := config.Timeout
+	if timeout <= 0 {
+		timeout = 30
+	}
+
+	client := scrapers.BuildHTTPClient(config)
+
+	baseURL := strings.TrimRight(config.BaseURL, "/")
+	if baseURL == "" {
+		baseURL = "https://www.bayut.com"
+	}
+
 	return &BayutScraper{
-		config:  config,
-		emirate: emirate,
-		client: &http.Client{
-			Timeout: time.Duration(config.Timeout) * time.Second,
-		},
-		rateLimiter: rate.NewLimiter(rate.Limit(config.RateLimit), 1),
+		config:      config,
+		emirate:     emirate,
+		client:      client,
+		rateLimiter: rate.NewLimiter(rate.Limit(rateLimit), 1),
+		baseURL:     baseURL,
 	}
 }
 
@@ -67,29 +84,9 @@ func (s *BayutScraper) Scrape(ctx context.Context) ([]*models.CostDataPoint, err
 		return nil, fmt.Errorf("rate limit wait: %w", err)
 	}
 
-	// Fetch the page
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	doc, err := s.fetchDocument(ctx, url)
 	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
-	}
-	req.Header.Set("User-Agent", s.config.UserAgent)
-
-	resp, err := s.client.Do(req)
-	if err != nil {
-		metrics.ScraperErrorsTotal.WithLabelValues("bayut", "fetch").Inc()
-		return nil, fmt.Errorf("fetch page: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		metrics.ScraperErrorsTotal.WithLabelValues("bayut", "status").Inc()
-		return nil, fmt.Errorf("bad status: %d", resp.StatusCode)
-	}
-
-	// Parse HTML
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("parse html: %w", err)
+		return nil, err
 	}
 
 	// Extract listings
@@ -128,13 +125,72 @@ func (s *BayutScraper) Scrape(ctx context.Context) ([]*models.CostDataPoint, err
 	// If no listings found with specific selectors, try a more general approach
 	if len(dataPoints) == 0 {
 		logger.Info("No listings found with specific selectors, trying general approach")
-		dataPoints = s.extractWithGeneralApproach(doc, url)
+		dataPoints = s.extractWithGeneralApproach(doc)
 	}
 
 	logger.Info("Completed Bayut scrape", "count", len(dataPoints))
-	metrics.ScraperItemsScraped.WithLabelValues("bayut").Add(float64(len(dataPoints)))
+	metrics.ScraperItemsScraped.WithLabelValues(s.Name()).Add(float64(len(dataPoints)))
 
 	return dataPoints, nil
+}
+
+func (s *BayutScraper) fetchDocument(ctx context.Context, url string) (*goquery.Document, error) {
+	maxRetries := s.config.EffectiveMaxRetries()
+	var lastErr error
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		if attempt > 0 {
+			logger.Info("Retrying Bayut fetch", "emirate", s.emirate, "attempt", attempt+1)
+			if err := scrapers.WaitRetry(ctx, s.config, attempt-1); err != nil {
+				return nil, err
+			}
+		}
+
+		if err := scrapers.DelayBetweenRequests(ctx, s.config); err != nil {
+			return nil, err
+		}
+
+		req, err := scrapers.PrepareRequest(ctx, http.MethodGet, url, nil, s.config)
+		if err != nil {
+			return nil, fmt.Errorf("create request: %w", err)
+		}
+
+		resp, err := s.client.Do(req)
+		if err != nil {
+			metrics.ScraperErrorsTotal.WithLabelValues("bayut", "fetch").Inc()
+			lastErr = fmt.Errorf("fetch page: %w", err)
+			continue
+		}
+
+		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusForbidden {
+			metrics.ScraperErrorsTotal.WithLabelValues("bayut", "blocked").Inc()
+			lastErr = fmt.Errorf("blocked by anti-bot (status %d)", resp.StatusCode)
+			resp.Body.Close()
+			continue
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			metrics.ScraperErrorsTotal.WithLabelValues("bayut", "status").Inc()
+			lastErr = fmt.Errorf("bad status: %d", resp.StatusCode)
+			resp.Body.Close()
+			continue
+		}
+
+		doc, err := goquery.NewDocumentFromReader(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			lastErr = fmt.Errorf("parse html: %w", err)
+			continue
+		}
+
+		return doc, nil
+	}
+
+	if lastErr != nil {
+		return nil, lastErr
+	}
+
+	return nil, fmt.Errorf("failed after %d attempts", maxRetries)
 }
 
 // extractListing extracts a single listing from a property card
@@ -218,11 +274,7 @@ func (scraper *BayutScraper) extractListing(s *goquery.Selection, baseURL string
 	// Extract URL
 	propertyURL := ""
 	if href, exists := s.Find("a").First().Attr("href"); exists {
-		if strings.HasPrefix(href, "http") {
-			propertyURL = href
-		} else {
-			propertyURL = "https://www.bayut.com" + href
-		}
+		propertyURL = scraper.resolveURL(href)
 	}
 
 	// Validate we have minimum required data
@@ -252,7 +304,7 @@ func (scraper *BayutScraper) extractListing(s *goquery.Selection, baseURL string
 }
 
 // extractWithGeneralApproach tries to extract listings using a more general approach
-func (s *BayutScraper) extractWithGeneralApproach(doc *goquery.Document, baseURL string) []*models.CostDataPoint {
+func (s *BayutScraper) extractWithGeneralApproach(doc *goquery.Document) []*models.CostDataPoint {
 	dataPoints := []*models.CostDataPoint{}
 
 	// Look for any links that seem to be property listings
@@ -289,11 +341,7 @@ func (s *BayutScraper) extractWithGeneralApproach(doc *goquery.Document, baseURL
 		// Get URL
 		href, _ := link.Attr("href")
 		propertyURL := ""
-		if strings.HasPrefix(href, "http") {
-			propertyURL = href
-		} else {
-			propertyURL = "https://www.bayut.com" + href
-		}
+		propertyURL = s.resolveURL(href)
 
 		now := time.Now()
 		dataPoints = append(dataPoints, &models.CostDataPoint{
@@ -305,15 +353,15 @@ func (s *BayutScraper) extractWithGeneralApproach(doc *goquery.Document, baseURL
 				Emirate: s.emirate,
 				City:    s.emirate,
 			},
-			Source:      "bayut",
-			SourceURL:   propertyURL,
-			Confidence:  0.6, // Lower confidence for general approach
-			Unit:        "AED",
-			RecordedAt:  now,
-			ValidFrom:   now,
-			SampleSize:  1,
-			Tags:        []string{"rent", "apartment", "bayut"},
-			Attributes:  map[string]interface{}{},
+			Source:     "bayut",
+			SourceURL:  propertyURL,
+			Confidence: 0.6, // Lower confidence for general approach
+			Unit:       "AED",
+			RecordedAt: now,
+			ValidFrom:  now,
+			SampleSize: 1,
+			Tags:       []string{"rent", "apartment", "bayut"},
+			Attributes: map[string]interface{}{},
 		})
 	})
 
@@ -323,7 +371,7 @@ func (s *BayutScraper) extractWithGeneralApproach(doc *goquery.Document, baseURL
 // buildURL constructs the Bayut URL for the emirate
 func (s *BayutScraper) buildURL() string {
 	emiratePath := s.emirateToURLPath(s.emirate)
-	return fmt.Sprintf("https://www.bayut.com/to-rent/apartments/%s/", emiratePath)
+	return fmt.Sprintf("%s/to-rent/apartments/%s/", strings.TrimRight(s.baseURL, "/"), emiratePath)
 }
 
 // emirateToURLPath converts emirate name to Bayut URL format
@@ -340,4 +388,26 @@ func (s *BayutScraper) emirateToURLPath(emirate string) string {
 	emirate = strings.ToLower(emirate)
 	emirate = strings.ReplaceAll(emirate, " ", "-")
 	return emirate
+}
+
+func (s *BayutScraper) resolveURL(href string) string {
+	if href == "" {
+		return ""
+	}
+
+	href = strings.TrimSpace(href)
+	if strings.HasPrefix(href, "http://") || strings.HasPrefix(href, "https://") {
+		return href
+	}
+
+	if strings.HasPrefix(href, "//") {
+		return "https:" + href
+	}
+
+	base := strings.TrimRight(s.baseURL, "/")
+	if !strings.HasPrefix(href, "/") {
+		href = "/" + href
+	}
+
+	return base + href
 }
