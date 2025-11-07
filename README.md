@@ -137,6 +137,14 @@ docker run -p 8080:8080 cost-of-living:latest
 - `PUT /api/v1/cost-data-points/:id` - Update a cost data point
 - `DELETE /api/v1/cost-data-points/:id` - Delete a cost data point
 
+### Estimator & Aggregation API
+- `POST /api/v1/estimates` - Accepts a persona payload (adults, kids, lifestyle, transport, emirate, housing type, etc.) and responds with a monthly breakdown plus dataset metadata.
+- `GET /api/v1/estimates/summary?emirate=Dubai` - Lightweight dataset snapshot (samples, coverage, last updated) for UI cards/monitoring.
+
+### HTMX / Templ UI
+- `GET /` renders the estimator/dashboard experience built with Templ + HTMX + Alpine.
+- `POST /ui/estimate` is the HTMX endpoint used by the persona form to refresh the estimate panel without a page reload.
+
 See `API_QUICK_REFERENCE.md` for detailed usage examples.
 
 ## Development
@@ -180,6 +188,13 @@ go test -v ./pkg/database
 
 ```bash
 make clean
+```
+
+### Frontend assets
+
+```bash
+# Generate Templ components (run automatically by make run/build)
+make templ
 ```
 
 ### Direct Database Access

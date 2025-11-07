@@ -1,0 +1,149 @@
+package ui
+
+import (
+    "fmt"
+    "strings"
+
+    "github.com/adonese/cost-of-living/internal/services/estimator"
+)
+
+templ EstimatorSection(result *estimator.EstimateResult) {
+    <section id="estimator" class="py-20">
+        <div class="container grid gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+            <div class="panel">
+                <p class="eyebrow">Persona</p>
+                <h2 class="panel-title">Tune assumptions</h2>
+                @PersonaForm(result)
+            </div>
+            @EstimatePanel(result)
+        </div>
+    </section>
+}
+
+templ PersonaForm(result *estimator.EstimateResult) {
+    <form id="persona-form" hx-post="/ui/estimate" hx-target="#estimate-panel" hx-swap="outerHTML" class="form-grid" hx-indicator="#form-indicator">
+        <div class="form-row">
+            <label>Adults</label>
+            <input type="number" name="adults" min="1" value={ fmt.Sprintf("%d", result.Persona.Adults) } required />
+        </div>
+        <div class="form-row">
+            <label>Children</label>
+            <input type="number" name="children" min="0" value={ fmt.Sprintf("%d", result.Persona.Children) } />
+        </div>
+        <div class="form-row">
+            <label>Bedrooms</label>
+            <input type="number" name="bedrooms" min="1" value={ fmt.Sprintf("%d", result.Persona.Bedrooms) } />
+        </div>
+        <div class="form-row">
+            <label>Housing Type</label>
+            <select name="housing_type">
+                <option value="apartment" selected={ PersonaHousingType(result.Persona) == "apartment" }>Apartment</option>
+                <option value="villa" selected={ PersonaHousingType(result.Persona) == "villa" }>Villa</option>
+                <option value="shared" selected={ PersonaHousingType(result.Persona) == "shared" }>Shared</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label>Lifestyle</label>
+            <select name="lifestyle">
+                <option value="budget" selected={ PersonaLifestyle(result.Persona) == "budget" }>Budget</option>
+                <option value="moderate" selected={ PersonaLifestyle(result.Persona) == "moderate" }>Moderate</option>
+                <option value="premium" selected={ PersonaLifestyle(result.Persona) == "premium" }>Premium</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label>Emirate</label>
+            <select name="emirate">
+                <option value="Dubai" selected={ result.Persona.Emirate == "Dubai" }>Dubai</option>
+                <option value="Abu Dhabi" selected={ result.Persona.Emirate == "Abu Dhabi" }>Abu Dhabi</option>
+                <option value="Sharjah" selected={ result.Persona.Emirate == "Sharjah" }>Sharjah</option>
+                <option value="Ajman" selected={ result.Persona.Emirate == "Ajman" }>Ajman</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label>Transport Mode</label>
+            <select name="transport_mode">
+                <option value="mixed" selected={ PersonaTransport(result.Persona) == "mixed" }>Mixed</option>
+                <option value="public" selected={ PersonaTransport(result.Persona) == "public" }>Public</option>
+                <option value="rideshare" selected={ PersonaTransport(result.Persona) == "rideshare" }>Ride share</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label>Commute distance (km)</label>
+            <input type="number" min="1" step="0.5" name="commute_distance_km" value={ fmt.Sprintf("%.1f", result.Persona.CommuteDistanceKM) } />
+        </div>
+        <div class="form-row">
+            <label>Work days / week</label>
+            <input type="number" min="3" max="7" name="work_days_per_week" value={ fmt.Sprintf("%d", result.Persona.WorkDaysPerWeek) } />
+        </div>
+        <button class="btn-primary" type="submit">Recalculate</button>
+        <div id="form-indicator" class="htmx-indicator">Updating…</div>
+    </form>
+}
+
+templ EstimatePanel(result *estimator.EstimateResult) {
+    <div id="estimate-panel" class="panel flex flex-col gap-6">
+        <div>
+            <p class="eyebrow">Estimated monthly burn</p>
+            <p class="headline">AED { FormatAED(result.MonthlyTotalAED) }</p>
+            <p class="subtle">{ TitleCase(string(result.Persona.Lifestyle)) } · { result.Persona.Emirate }</p>
+        </div>
+        <div class="grid gap-4 md:grid-cols-3">
+            <div class="stat">
+                <p class="stat-label">Dataset Samples</p>
+                <p class="stat-value">{ result.Dataset.TotalSamples }</p>
+                <p class="stat-hint">Last ingest { humanizeTime(result.Dataset.LastUpdated) }</p>
+            </div>
+            <div class="stat">
+                <p class="stat-label">Coverage</p>
+                <p class="stat-value">{ len(result.Dataset.Coverage) } categories</p>
+                <p class="stat-hint">{ strings.Join(result.Dataset.Coverage, ", ") }</p>
+            </div>
+            <div class="stat">
+                <p class="stat-label">Confidence</p>
+                <p class="stat-value">{ formatConfidence(result.Breakdown) }</p>
+                <p class="stat-hint">Scraped + heuristic blend</p>
+            </div>
+        </div>
+        <div class="breakdown">
+            <p class="eyebrow">Breakdown</p>
+            for _, item := range result.Breakdown {
+                @BreakdownRow(item, result.MonthlyTotalAED)
+            }
+        </div>
+        <div class="recommendations">
+            <p class="eyebrow">Recommendations</p>
+            <ul>
+                for _, rec := range result.Recommendations {
+                    <li>{ rec }</li>
+                }
+            </ul>
+        </div>
+        if len(result.Dataset.Warnings) > 0 {
+            <div class="warnings">
+                <p class="eyebrow text-amber-500">Data Warnings</p>
+                <ul>
+                    for _, warn := range result.Dataset.Warnings {
+                        <li>{ warn }</li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+}
+
+templ BreakdownRow(item estimator.CategoryEstimate, total float64) {
+    <div class="breakdown-row">
+        <div>
+            <p class="breakdown-title">{ item.Category }</p>
+            <p class="breakdown-method">{ strings.Title(item.Method) }</p>
+        </div>
+        <div class="breakdown-values">
+            <p class="breakdown-amount">AED { FormatAED(item.MonthlyAED) }</p>
+            <p class="breakdown-range">{ formatRange(item.RangeLowAED, item.RangeHighAED) }</p>
+        </div>
+        <div class="breakdown-meta">
+            <span>{ badgeConfidence(item.Confidence) }</span>
+            <span>AED { FormatAED(item.MonthlyAED) } · { percentShare(item.MonthlyAED, total) }</span>
+        </div>
+    </div>
+}

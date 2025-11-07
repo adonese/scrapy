@@ -215,6 +215,12 @@ func (r *CostDataPointRepository) List(ctx context.Context, filter repository.Li
 		argPos++
 	}
 
+	if filter.SubCategory != "" {
+		query += fmt.Sprintf(" AND sub_category = $%d", argPos)
+		args = append(args, filter.SubCategory)
+		argPos++
+	}
+
 	if filter.Emirate != "" {
 		query += fmt.Sprintf(" AND location->>'emirate' = $%d", argPos)
 		args = append(args, filter.Emirate)

@@ -1,9 +1,14 @@
-.PHONY: run build test test-unit test-repo test-ci test-integration test-coverage test-bench validate-scrapers lint security-scan clean db-up db-down db-logs migrate migrate-down migrate-version temporal-up temporal-down temporal-ui worker run-workflow trigger-scrape trigger-scheduled prom-up prom-down prom-ui scrape-bayut scrape-all e2e-test ci-setup ci-validate
+.PHONY: run build templ test test-unit test-repo test-ci test-integration test-coverage test-bench validate-scrapers lint security-scan clean db-up db-down db-logs migrate migrate-down migrate-version temporal-up temporal-down temporal-ui worker run-workflow trigger-scrape trigger-scheduled prom-up prom-down prom-ui scrape-bayut scrape-all e2e-test ci-setup ci-validate
 
-run:
+TEMPL_VERSION ?= v0.3.960
+
+templ:
+	go run github.com/a-h/templ/cmd/templ@$(TEMPL_VERSION) generate
+
+run: templ
 	go run cmd/api/main.go
 
-build:
+build: templ
 	go build -o bin/api cmd/api/main.go
 
 test:

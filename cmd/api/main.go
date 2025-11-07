@@ -7,6 +7,8 @@ import (
 	"github.com/adonese/cost-of-living/internal/handlers"
 	customMiddleware "github.com/adonese/cost-of-living/internal/middleware"
 	"github.com/adonese/cost-of-living/internal/repository/postgres"
+	"github.com/adonese/cost-of-living/internal/services/estimator"
+	uihandlers "github.com/adonese/cost-of-living/internal/ui/handlers"
 	"github.com/adonese/cost-of-living/pkg/database"
 	"github.com/adonese/cost-of-living/pkg/logger"
 	"github.com/labstack/echo/v4"
@@ -32,6 +34,9 @@ func main() {
 	costDataPointRepo := postgres.NewCostDataPointRepository(db.GetConn())
 	logger.Info("Initialized CostDataPointRepository")
 
+	// Aggregation/estimator service
+	estimatorService := estimator.NewService(costDataPointRepo, nil)
+
 	// Initialize Echo
 	e := echo.New()
 
@@ -40,6 +45,14 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Use(customMiddleware.ErrorHandler())
 	e.Use(customMiddleware.MetricsMiddleware())
+
+	// Static assets
+	e.Static("/static", "web/static")
+
+	// Public UI routes
+	homeHandler := uihandlers.NewHomeHandler(estimatorService)
+	e.GET("/", homeHandler.Index)
+	e.POST("/ui/estimate", homeHandler.EstimatePartial)
 
 	// Health check route
 	e.GET("/health", handlers.NewHealthHandler(db).Health)
@@ -57,6 +70,11 @@ func main() {
 	api.GET("/cost-data-points", costDataPointHandler.List)
 	api.PUT("/cost-data-points/:id", costDataPointHandler.Update)
 	api.DELETE("/cost-data-points/:id", costDataPointHandler.Delete)
+
+	// Estimates + summary endpoints
+	estimateHandler := handlers.NewEstimatorHandler(estimatorService)
+	api.POST("/estimates", estimateHandler.Estimate)
+	api.GET("/estimates/summary", estimateHandler.Summary)
 
 	// Start server
 	port := os.Getenv("PORT")

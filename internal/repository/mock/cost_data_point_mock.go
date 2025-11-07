@@ -98,6 +98,9 @@ func (m *CostDataPointRepository) List(ctx context.Context, filter repository.Li
 		if filter.Category != "" && cdp.Category != filter.Category {
 			continue
 		}
+		if filter.SubCategory != "" && cdp.SubCategory != filter.SubCategory {
+			continue
+		}
 		if filter.Emirate != "" && cdp.Location.Emirate != filter.Emirate {
 			continue
 		}

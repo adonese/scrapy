@@ -34,6 +34,9 @@ type ListFilter struct {
 	// Category filters by category (exact match)
 	Category string
 
+	// SubCategory filters by sub category (exact match)
+	SubCategory string
+
 	// Emirate filters by location emirate (exact match)
 	Emirate string
 
