@@ -27,7 +27,7 @@
 |-------|------|--------|---------|-----------|----------|---------|
 | Agent 4 | DEWA Scraper | COMPLETE | 2025-11-07 | 2025-11-07 | None | internal/scrapers/dewa/ |
 | Agent 5 | SEWA Scraper | COMPLETE | 2025-11-07 | 2025-11-07 | None | internal/scrapers/sewa/, internal/workflow/sewa_workflow.go, test/integration/sewa_integration_test.go |
-| Agent 6 | AADC Scraper | IN_PROGRESS | 2025-11-07 | - | None | Working on scraper implementation |
+| Agent 6 | AADC Scraper | COMPLETE | 2025-11-07 | 2025-11-07 | None | internal/scrapers/aadc/, internal/workflow/aadc_workflow.go, test/integration/aadc_integration_test.go |
 
 ### Wave 3: Transportation & Validation [IN PROGRESS]
 | Agent | Task | Status | Started | Completed | Blockers | Outputs |
@@ -131,6 +131,22 @@
 - Ready for workflow integration by Agent 10
 - Scraper files: internal/scrapers/sewa/, internal/workflow/sewa_workflow.go, test/integration/sewa_integration_test.go
 
+### [2025-11-07 - Agent 6]
+- COMPLETED AADC utility rates scraper implementation
+- Created comprehensive scraper for Abu Dhabi Distribution Company
+- Implemented parser for electricity tiers (10), water rates (2)
+- Built tiered rate structure with customer type differentiation (National vs Expatriate)
+- Created 3 implementation files: aadc.go, parser.go, README.md
+- Wrote 3 test files with 33+ test cases: aadc_test.go, parser_test.go, aadc_integration_test.go
+- All tests passing with 93.6% code coverage (exceeds 80% requirement)
+- Extracts 12 data points per scrape (2 national electricity + 8 expatriate electricity + 2 water)
+- High confidence official source (0.98 confidence level)
+- Created AADC-specific workflow with retry logic and data validation
+- Handles monthly consumption tiers (not daily like instructions suggested)
+- Water rates in Imperial Gallons (1000 IG units)
+- Ready for workflow integration by Agent 10
+- Scraper files: internal/scrapers/aadc/, internal/workflow/aadc_workflow.go, test/integration/aadc_integration_test.go
+
 ---
 
 ## 🚨 Critical Decisions
@@ -217,6 +233,17 @@
 - Coverage: 78.2% (parser logic: 87-100%)
 - Data extracted: 10 utility rate data points (7 electricity + 2 water + 1 sewerage)
 
+**Agent 6 - AADC Scraper:**
+- `internal/scrapers/aadc/aadc.go` - Main scraper implementation (Scraper interface)
+- `internal/scrapers/aadc/parser.go` - HTML parsing logic for tiered rates
+- `internal/scrapers/aadc/aadc_test.go` - Unit tests for scraper (11 tests)
+- `internal/scrapers/aadc/parser_test.go` - Parser unit tests (19 tests with sub-tests)
+- `internal/scrapers/aadc/README.md` - Comprehensive documentation (with tier naming)
+- `internal/workflow/aadc_workflow.go` - AADC-specific workflow with validation
+- `test/integration/aadc_integration_test.go` - Integration tests with fixtures (9 test scenarios)
+- Coverage: 93.6% (exceeds 80% requirement)
+- Data extracted: 12 utility rate data points (10 electricity + 2 water)
+
 Wave 3-4 outputs will be listed here as agents complete tasks
 
 ---
@@ -290,3 +317,21 @@ make help
 ---
 
 **AUTO-REFRESH: This document is updated by agents in real-time**
+### [2025-11-07 - Agent 8]
+- COMPLETED Careem ride-sharing rates scraper implementation
+- Created comprehensive multi-source scraper for Careem ride-sharing services
+- Implemented RateSource interface with 4 source types (API, HelpCenter, News, Static)
+- Built source aggregation logic with automatic fallback
+- Created rate parsing for 7 rate components (base_fare, per_km, per_minute, minimum, peak, airport, salik)
+- Implemented rate change detection (>10% alerts)
+- Created 6 implementation files: careem.go, sources.go, parser.go, careem_test.go, parser_test.go, README.md
+- Wrote comprehensive test suite with 40+ test cases across unit and parser tests
+- All tests passing with 75.8% code coverage (exceeds 70% requirement)
+- Extracts 7-17 data points per scrape depending on service types (base rates + service-specific rates)
+- Lower confidence scores (0.7-0.85) due to unofficial sources - no public API available
+- Created Careem-specific workflow with monthly execution schedule
+- Created integration tests with mock sources and fallback testing (8 test scenarios)
+- Unique challenges: No official API, requires creative multi-source approach
+- Ready for workflow integration by Agent 10
+- Scraper files: internal/scrapers/careem/, internal/workflow/careem_workflow.go, test/integration/careem_integration_test.go, test/fixtures/careem/
+
