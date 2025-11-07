@@ -30,6 +30,10 @@ func SetActivityDependencies(deps *ScraperActivityDependencies) {
 	dependencies = deps
 }
 
+func GetActivityDependencies() *ScraperActivityDependencies {
+	return dependencies
+}
+
 // RunScraperActivity executes a scraper and stores the results
 func RunScraperActivity(ctx context.Context, scraperName string) (*ScraperActivityResult, error) {
 	logger.Info("Running scraper activity", "scraper", scraperName)

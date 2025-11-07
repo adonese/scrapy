@@ -9,8 +9,13 @@ import (
 
 	"github.com/adonese/cost-of-living/internal/repository/postgres"
 	"github.com/adonese/cost-of-living/internal/scrapers"
+	"github.com/adonese/cost-of-living/internal/scrapers/aadc"
 	"github.com/adonese/cost-of-living/internal/scrapers/bayut"
+	"github.com/adonese/cost-of-living/internal/scrapers/careem"
+	"github.com/adonese/cost-of-living/internal/scrapers/dewa"
 	"github.com/adonese/cost-of-living/internal/scrapers/dubizzle"
+	"github.com/adonese/cost-of-living/internal/scrapers/rta"
+	"github.com/adonese/cost-of-living/internal/scrapers/sewa"
 	"github.com/adonese/cost-of-living/internal/services"
 	"github.com/adonese/cost-of-living/internal/workflow"
 	"github.com/adonese/cost-of-living/pkg/database"
@@ -31,10 +36,10 @@ func main() {
 	// Create repository
 	repo := postgres.NewCostDataPointRepository(db.GetConn())
 
-	// Create scraper service
+	// Create scraper service with validation enabled
 	scraperService := services.NewScraperService(repo)
 
-	// Register scrapers
+	// Configure scrapers
 	scraperConfig := scrapers.Config{
 		UserAgent:  "Mozilla/5.0 (compatible; UAECostOfLiving/1.0)",
 		RateLimit:  1,
@@ -42,29 +47,10 @@ func main() {
 		MaxRetries: 3,
 	}
 
-	// Register Bayut scrapers for all major emirates
-	emirates := []string{"Dubai", "Sharjah", "Ajman", "Abu Dhabi"}
-	for _, emirate := range emirates {
-		bayutScraper := bayut.NewBayutScraperForEmirate(scraperConfig, emirate)
-		scraperService.RegisterScraper(bayutScraper)
-		logger.Info("Registered Bayut scraper", "emirate", emirate)
-	}
+	// Register all scrapers
+	allScrapers := registerAllScrapers(scraperService, scraperConfig)
 
-	// Register Dubizzle scrapers for all major emirates
-	for _, emirate := range emirates {
-		dubizzleScraper := dubizzle.NewDubizzleScraperFor(scraperConfig, emirate, "apartmentflat")
-		scraperService.RegisterScraper(dubizzleScraper)
-		logger.Info("Registered Dubizzle scraper", "emirate", emirate, "category", "apartments")
-	}
-
-	// Register shared accommodation scrapers (Dubai focus initially)
-	dubizzleBedspace := dubizzle.NewDubizzleScraperFor(scraperConfig, "Dubai", "bedspace")
-	scraperService.RegisterScraper(dubizzleBedspace)
-	logger.Info("Registered Dubizzle scraper", "emirate", "Dubai", "category", "bedspace")
-
-	dubizzleRoomspace := dubizzle.NewDubizzleScraperFor(scraperConfig, "Dubai", "roomspace")
-	scraperService.RegisterScraper(dubizzleRoomspace)
-	logger.Info("Registered Dubizzle scraper", "emirate", "Dubai", "category", "roomspace")
+	logger.Info("All scrapers registered", "total", allScrapers)
 
 	// Set activity dependencies
 	workflow.SetActivityDependencies(&workflow.ScraperActivityDependencies{
@@ -90,15 +76,45 @@ func main() {
 	// Create worker
 	w := worker.New(c, "cost-of-living-task-queue", worker.Options{})
 
-	// Register workflows
+	// Register core workflows
 	w.RegisterWorkflow(workflow.HelloWorkflow)
 	w.RegisterWorkflow(workflow.ScraperWorkflow)
 	w.RegisterWorkflow(workflow.ScheduledScraperWorkflow)
 
-	// Register activities
+	// Register batch and scheduler workflows
+	w.RegisterWorkflow(workflow.BatchScraperWorkflow)
+	w.RegisterWorkflow(workflow.DailyScraperWorkflow)
+	w.RegisterWorkflow(workflow.WeeklyScraperWorkflow)
+	w.RegisterWorkflow(workflow.MonthlyScraperWorkflow)
+	w.RegisterWorkflow(workflow.MasterSchedulerWorkflow)
+	w.RegisterWorkflow(workflow.CronSchedulerWorkflow)
+	w.RegisterWorkflow(workflow.OnDemandScraperWorkflow)
+
+	// Register utility scraper workflows
+	w.RegisterWorkflow(workflow.DEWAScraperWorkflow)
+	w.RegisterWorkflow(workflow.ScheduledDEWAWorkflow)
+	w.RegisterWorkflow(workflow.SEWAScraperWorkflow)
+	w.RegisterWorkflow(workflow.ScheduledSEWAWorkflow)
+	w.RegisterWorkflow(workflow.AADCScraperWorkflow)
+	w.RegisterWorkflow(workflow.ScheduledAADCWorkflow)
+
+	// Register transport scraper workflows
+	w.RegisterWorkflow(workflow.RTAScraperWorkflow)
+	w.RegisterWorkflow(workflow.ScheduledRTAWorkflow)
+	w.RegisterWorkflow(workflow.CareemScraperWorkflow)
+	w.RegisterWorkflow(workflow.ScheduledCareemWorkflow)
+
+	// Register core activities
 	w.RegisterActivity(workflow.HelloActivity)
 	w.RegisterActivity(workflow.RunScraperActivity)
 	w.RegisterActivity(workflow.CompensateFailedScrapeActivity)
+
+	// Register validation activities
+	w.RegisterActivity(workflow.ValidateRecentDataActivity)
+	w.RegisterActivity(workflow.ValidateScraperDataActivity)
+	w.RegisterActivity(workflow.CheckDataFreshnessActivity)
+	w.RegisterActivity(workflow.DetectOutliersActivity)
+	w.RegisterActivity(workflow.CheckDuplicatesActivity)
 
 	logger.Info("Worker starting...", "queue", "cost-of-living-task-queue")
 
@@ -107,4 +123,69 @@ func main() {
 	if err != nil {
 		log.Fatalln("Unable to start worker", err)
 	}
+}
+
+// registerAllScrapers creates and registers all available scrapers
+func registerAllScrapers(service *services.ScraperService, config scrapers.Config) int {
+	count := 0
+	emirates := []string{"Dubai", "Sharjah", "Ajman", "Abu Dhabi"}
+
+	// Housing scrapers - Daily (run frequently, housing changes fast)
+	// Register Bayut scrapers for all major emirates
+	for _, emirate := range emirates {
+		bayutScraper := bayut.NewBayutScraperForEmirate(config, emirate)
+		service.RegisterScraper(bayutScraper)
+		count++
+	}
+
+	// Register Dubizzle apartment scrapers for each emirate
+	for _, emirate := range emirates {
+		dubizzleScraper := dubizzle.NewDubizzleScraperFor(config, emirate, "apartmentflat")
+		service.RegisterScraper(dubizzleScraper)
+		count++
+	}
+
+	// Register shared accommodation scrapers (Dubai focus)
+	dubizzleBedspace := dubizzle.NewDubizzleScraperFor(config, "Dubai", "bedspace")
+	service.RegisterScraper(dubizzleBedspace)
+	count++
+
+	dubizzleRoomspace := dubizzle.NewDubizzleScraperFor(config, "Dubai", "roomspace")
+	service.RegisterScraper(dubizzleRoomspace)
+	count++
+
+	// Utility scrapers - Weekly (rates change less frequently)
+	// DEWA - Dubai Electricity and Water Authority
+	dewaScraper := dewa.NewDEWAScraper(config)
+	service.RegisterScraper(dewaScraper)
+	count++
+
+	// SEWA - Sharjah Electricity, Water and Gas Authority
+	sewaScraper := sewa.NewSEWAScraper(config)
+	service.RegisterScraper(sewaScraper)
+	count++
+
+	// AADC - Abu Dhabi Distribution Company
+	aadcScraper := aadc.NewAADCScraper(config)
+	service.RegisterScraper(aadcScraper)
+	count++
+
+	// Transportation scrapers
+	// RTA - Dubai public transport (Weekly)
+	rtaScraper := rta.NewRTAScraper(config)
+	service.RegisterScraper(rtaScraper)
+	count++
+
+	// Careem - Ride-sharing (Monthly - rates rarely change)
+	careemScraper := careem.NewCareemScraper(config)
+	service.RegisterScraper(careemScraper)
+	count++
+
+	logger.Info("Scraper registration complete",
+		"housing", 10,
+		"utilities", 3,
+		"transportation", 2,
+		"total", count)
+
+	return count
 }
