@@ -1,0 +1,330 @@
+package navigation
+
+// This file contains example usage of all navigation components
+// Use these as reference when implementing navigation in your application
+
+// ExampleNavbarUsage shows how to use the complete navbar component
+templ ExampleNavbarUsage() {
+	@NavbarComplete(NavbarCompleteProps{
+		LogoText:    "My Application",
+		Subtitle:    "Built with Templ",
+		ShowStatus:  true,
+		StatusText:  "Live",
+		StatusColor: "green",
+		NavLinks: []NavLink{
+			{Href: "/", Text: "Home", Label: "Navigate to home page"},
+			{Href: "/about", Text: "About", Label: "Navigate to about page"},
+			{Href: "/products", Text: "Products", Label: "Navigate to products page"},
+			{Href: "/contact", Text: "Contact", Label: "Navigate to contact page"},
+		},
+	})
+}
+
+// ExampleBreadcrumbUsage shows how to use the breadcrumb component
+templ ExampleBreadcrumbUsage() {
+	<div class="container mx-auto px-4 py-4">
+		@Breadcrumb(BreadcrumbProps{
+			Items: []BreadcrumbItem{
+				{Text: "Products", Href: "/products"},
+				{Text: "Electronics", Href: "/products/electronics"},
+				{Text: "Laptops", Href: "/products/electronics/laptops"},
+				{Text: "MacBook Pro", Href: ""}, // Last item (current page) doesn't need href
+			},
+		})
+	</div>
+}
+
+// ExampleBreadcrumbCompactUsage shows the compact breadcrumb for mobile
+templ ExampleBreadcrumbCompactUsage() {
+	<div class="container mx-auto px-4 py-4">
+		<!-- Show compact version on mobile, full on desktop -->
+		<div class="md:hidden">
+			@BreadcrumbCompact(BreadcrumbProps{
+				Items: []BreadcrumbItem{
+					{Text: "Products", Href: "/products"},
+					{Text: "Electronics", Href: "/products/electronics"},
+					{Text: "Laptops", Href: "/products/electronics/laptops"},
+					{Text: "MacBook Pro", Href: ""},
+				},
+			})
+		</div>
+		<div class="hidden md:block">
+			@Breadcrumb(BreadcrumbProps{
+				Items: []BreadcrumbItem{
+					{Text: "Products", Href: "/products"},
+					{Text: "Electronics", Href: "/products/electronics"},
+					{Text: "Laptops", Href: "/products/electronics/laptops"},
+					{Text: "MacBook Pro", Href: ""},
+				},
+			})
+		</div>
+	</div>
+}
+
+// ExampleTabsBasicUsage shows basic tab usage with inline content
+templ ExampleTabsBasicUsage() {
+	<div class="container mx-auto px-4 py-8">
+		<h2 class="text-2xl font-bold mb-4">Product Information</h2>
+		@Tabs(TabsProps{
+			DefaultTab: "overview",
+			Variant:    "underline",
+			Size:       "md",
+			UseHTMX:    false,
+			Tabs: []TabItem{
+				{
+					ID:      "overview",
+					Label:   "Overview",
+					Icon:    "📋",
+					Content: TabContent("This is the overview section with product details."),
+				},
+				{
+					ID:      "specs",
+					Label:   "Specifications",
+					Icon:    "⚙️",
+					Content: TabContent("Technical specifications go here."),
+				},
+				{
+					ID:      "reviews",
+					Label:   "Reviews",
+					Icon:    "⭐",
+					Badge:   "12",
+					Content: TabContent("Customer reviews and ratings."),
+				},
+			},
+		})
+	</div>
+}
+
+// ExampleTabsPillsVariant shows tabs with pills variant
+templ ExampleTabsPillsVariant() {
+	<div class="container mx-auto px-4 py-8">
+		@Tabs(TabsProps{
+			DefaultTab: "all",
+			Variant:    "pills",
+			Size:       "md",
+			UseHTMX:    false,
+			Tabs: []TabItem{
+				{
+					ID:      "all",
+					Label:   "All",
+					Content: TabContent("All items are shown here."),
+				},
+				{
+					ID:      "active",
+					Label:   "Active",
+					Badge:   "5",
+					Content: TabContent("Active items only."),
+				},
+				{
+					ID:      "completed",
+					Label:   "Completed",
+					Content: TabContent("Completed items."),
+				},
+			},
+		})
+	</div>
+}
+
+// ExampleTabsHTMXUsage shows tabs with HTMX for dynamic content loading
+templ ExampleTabsHTMXUsage() {
+	<div class="container mx-auto px-4 py-8">
+		<h2 class="text-2xl font-bold mb-4">Dynamic Content Tabs</h2>
+		@Tabs(TabsProps{
+			DefaultTab:    "dashboard",
+			Variant:       "underline",
+			Size:          "md",
+			UseHTMX:       true,
+			HTMXTarget:    "tab-content",
+			HTMXIndicator: "loading",
+			Tabs: []TabItem{
+				{
+					ID:    "dashboard",
+					Label: "Dashboard",
+					Icon:  "📊",
+					Href:  "/api/tabs/dashboard",
+				},
+				{
+					ID:    "analytics",
+					Label: "Analytics",
+					Icon:  "📈",
+					Href:  "/api/tabs/analytics",
+				},
+				{
+					ID:    "settings",
+					Label: "Settings",
+					Icon:  "⚙️",
+					Href:  "/api/tabs/settings",
+				},
+			},
+		})
+	</div>
+}
+
+// ExampleTabsBoxedVariant shows tabs with boxed variant
+templ ExampleTabsBoxedVariant() {
+	<div class="container mx-auto px-4 py-8">
+		@Tabs(TabsProps{
+			DefaultTab: "preview",
+			Variant:    "boxed",
+			Size:       "lg",
+			UseHTMX:    false,
+			Tabs: []TabItem{
+				{
+					ID:      "preview",
+					Label:   "Preview",
+					Content: TabContent("Preview your changes here."),
+				},
+				{
+					ID:      "code",
+					Label:   "Code",
+					Content: TabContent("View the code implementation."),
+				},
+			},
+		})
+	</div>
+}
+
+// ExampleMobileMenuUsage shows standalone mobile menu usage
+templ ExampleMobileMenuUsage() {
+	<div class="p-4">
+		<h3 class="text-lg font-bold mb-4">Mobile Menu Example</h3>
+		@MobileMenuComplete(
+			[]NavLink{
+				{Href: "/", Text: "Home", Label: "Go to home"},
+				{Href: "/products", Text: "Products", Label: "View products"},
+				{Href: "/about", Text: "About", Label: "Learn about us"},
+				{Href: "/contact", Text: "Contact", Label: "Contact us"},
+			},
+			"MyApp",
+			"Navigation",
+		)
+	</div>
+}
+
+// ExampleFullPageLayout shows a complete page layout with all navigation components
+templ ExampleFullPageLayout() {
+	<!DOCTYPE html>
+	<html lang="en" class="h-full">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>Navigation Components Example</title>
+			<script src="https://cdn.tailwindcss.com"></script>
+			<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+			<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+			<style>
+				[x-cloak] { display: none !important; }
+				.htmx-indicator { display: none; }
+				.htmx-request .htmx-indicator { display: flex; }
+			</style>
+		</head>
+		<body class="h-full bg-slate-50 dark:bg-slate-950">
+			<!-- Navbar -->
+			@NavbarComplete(NavbarCompleteProps{
+				LogoText:    "Component Demo",
+				Subtitle:    "Templ + Alpine.js",
+				ShowStatus:  true,
+				StatusText:  "Live",
+				StatusColor: "green",
+				NavLinks: []NavLink{
+					{Href: "#navbar", Text: "Navbar", Label: "Navigate to navbar section"},
+					{Href: "#breadcrumb", Text: "Breadcrumb", Label: "Navigate to breadcrumb section"},
+					{Href: "#tabs", Text: "Tabs", Label: "Navigate to tabs section"},
+					{Href: "#examples", Text: "Examples", Label: "Navigate to examples section"},
+				},
+			})
+
+			<!-- Main Content -->
+			<main class="container mx-auto px-4 py-8">
+				<!-- Breadcrumb Example -->
+				<section id="breadcrumb" class="mb-12">
+					<h2 class="text-3xl font-bold mb-6 text-slate-900 dark:text-white">Breadcrumb Navigation</h2>
+					@Breadcrumb(BreadcrumbProps{
+						Items: []BreadcrumbItem{
+							{Text: "Components", Href: "/components"},
+							{Text: "Navigation", Href: "/components/navigation"},
+							{Text: "Examples", Href: ""},
+						},
+					})
+				</section>
+
+				<!-- Tabs Example -->
+				<section id="tabs" class="mb-12">
+					<h2 class="text-3xl font-bold mb-6 text-slate-900 dark:text-white">Tab Navigation</h2>
+					<div class="bg-white dark:bg-slate-900 rounded-lg shadow-sm p-6 border border-slate-200 dark:border-slate-800">
+						@Tabs(TabsProps{
+							DefaultTab: "overview",
+							Variant:    "underline",
+							Size:       "md",
+							UseHTMX:    false,
+							Tabs: []TabItem{
+								{
+									ID:      "overview",
+									Label:   "Overview",
+									Icon:    "📋",
+									Content: TabContent("Welcome to the navigation components demo. These components are built with Templ, Alpine.js, and Tailwind CSS."),
+								},
+								{
+									ID:      "features",
+									Label:   "Features",
+									Icon:    "✨",
+									Content: TabContent("Features include: responsive design, dark mode support, keyboard navigation, ARIA labels, and smooth transitions."),
+								},
+								{
+									ID:      "usage",
+									Label:   "Usage",
+									Icon:    "📖",
+									Badge:   "New",
+									Content: TabContent("Check the examples.templ file for complete usage examples and implementation details."),
+								},
+							},
+						})
+					</div>
+				</section>
+
+				<!-- Pills Variant Example -->
+				<section class="mb-12">
+					<h3 class="text-2xl font-bold mb-4 text-slate-900 dark:text-white">Pills Variant</h3>
+					<div class="bg-white dark:bg-slate-900 rounded-lg shadow-sm p-6 border border-slate-200 dark:border-slate-800">
+						@Tabs(TabsProps{
+							DefaultTab: "all",
+							Variant:    "pills",
+							Size:       "md",
+							UseHTMX:    false,
+							Tabs: []TabItem{
+								{ID: "all", Label: "All Items", Content: TabContent("All items view")},
+								{ID: "active", Label: "Active", Badge: "5", Content: TabContent("Active items view")},
+								{ID: "archived", Label: "Archived", Content: TabContent("Archived items view")},
+							},
+						})
+					</div>
+				</section>
+
+				<!-- Boxed Variant Example -->
+				<section class="mb-12">
+					<h3 class="text-2xl font-bold mb-4 text-slate-900 dark:text-white">Boxed Variant</h3>
+					<div class="bg-slate-100 dark:bg-slate-800 rounded-lg p-6">
+						@Tabs(TabsProps{
+							DefaultTab: "preview",
+							Variant:    "boxed",
+							Size:       "md",
+							UseHTMX:    false,
+							Tabs: []TabItem{
+								{ID: "preview", Label: "Preview", Content: TabContent("Preview your content here")},
+								{ID: "code", Label: "Code", Content: TabContent("View the source code")},
+								{ID: "output", Label: "Output", Content: TabContent("See the rendered output")},
+							},
+						})
+					</div>
+				</section>
+			</main>
+
+			<!-- Footer -->
+			<footer class="border-t border-slate-200 dark:border-slate-800 mt-12 py-8">
+				<div class="container mx-auto px-4 text-center text-slate-600 dark:text-slate-400">
+					<p>Built with Templ + Alpine.js + HTMX + Tailwind CSS</p>
+				</div>
+			</footer>
+		</body>
+	</html>
+}

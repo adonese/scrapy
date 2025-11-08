@@ -36,7 +36,7 @@ func EstimatorSection(result *estimator.EstimateResult) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section id=\"estimator\" class=\"py-20\"><div class=\"container grid gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]\"><div class=\"panel\"><p class=\"eyebrow\">Persona</p><h2 class=\"panel-title\">Tune assumptions</h2>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section id=\"estimator\" class=\"py-20\"><div class=\"max-w-7xl mx-auto px-4 grid gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]\"><div class=\"bg-white rounded-3xl border border-slate-900/[0.08] p-8 shadow-2xl\"><p class=\"uppercase tracking-[0.35em] text-xs text-slate-400\">Persona</p><h2 class=\"my-1.5 mb-6 text-2xl font-semibold\">Tune assumptions</h2>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -81,7 +81,7 @@ func PersonaForm(result *estimator.EstimateResult) templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<form id=\"persona-form\" hx-post=\"/ui/estimate\" hx-target=\"#estimate-panel\" hx-swap=\"outerHTML\" class=\"form-grid\" hx-indicator=\"#form-indicator\"><div class=\"form-row\"><label>Adults</label> <input type=\"number\" name=\"adults\" min=\"1\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<form id=\"persona-form\" hx-post=\"/ui/estimate\" hx-target=\"#estimate-panel\" hx-swap=\"outerHTML\" class=\"grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4 mt-6\" hx-indicator=\"#form-indicator\"><div class=\"flex flex-col gap-1.5\"><label class=\"text-sm text-slate-600\">Adults</label> <input type=\"number\" name=\"adults\" min=\"1\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -94,7 +94,7 @@ func PersonaForm(result *estimator.EstimateResult) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" required></div><div class=\"form-row\"><label>Children</label> <input type=\"number\" name=\"children\" min=\"0\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" required class=\"rounded-xl border border-slate-900/[0.15] px-3.5 py-3 text-base font-sans\"></div><div class=\"flex flex-col gap-1.5\"><label class=\"text-sm text-slate-600\">Children</label> <input type=\"number\" name=\"children\" min=\"0\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -107,7 +107,7 @@ func PersonaForm(result *estimator.EstimateResult) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\"></div><div class=\"form-row\"><label>Bedrooms</label> <input type=\"number\" name=\"bedrooms\" min=\"1\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" class=\"rounded-xl border border-slate-900/[0.15] px-3.5 py-3 text-base font-sans\"></div><div class=\"flex flex-col gap-1.5\"><label class=\"text-sm text-slate-600\">Bedrooms</label> <input type=\"number\" name=\"bedrooms\" min=\"1\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -120,7 +120,7 @@ func PersonaForm(result *estimator.EstimateResult) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\"></div><div class=\"form-row\"><label>Housing Type</label> <select name=\"housing_type\"><option value=\"apartment\" selected=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" class=\"rounded-xl border border-slate-900/[0.15] px-3.5 py-3 text-base font-sans\"></div><div class=\"flex flex-col gap-1.5\"><label class=\"text-sm text-slate-600\">Housing Type</label> <select name=\"housing_type\" class=\"rounded-xl border border-slate-900/[0.15] px-3.5 py-3 text-base font-sans\"><option value=\"apartment\" selected=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -159,7 +159,7 @@ func PersonaForm(result *estimator.EstimateResult) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\">Shared</option></select></div><div class=\"form-row\"><label>Lifestyle</label> <select name=\"lifestyle\"><option value=\"budget\" selected=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\">Shared</option></select></div><div class=\"flex flex-col gap-1.5\"><label class=\"text-sm text-slate-600\">Lifestyle</label> <select name=\"lifestyle\" class=\"rounded-xl border border-slate-900/[0.15] px-3.5 py-3 text-base font-sans\"><option value=\"budget\" selected=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -198,7 +198,7 @@ func PersonaForm(result *estimator.EstimateResult) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\">Premium</option></select></div><div class=\"form-row\"><label>Emirate</label> <select name=\"emirate\"><option value=\"Dubai\" selected=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\">Premium</option></select></div><div class=\"flex flex-col gap-1.5\"><label class=\"text-sm text-slate-600\">Emirate</label> <select name=\"emirate\" class=\"rounded-xl border border-slate-900/[0.15] px-3.5 py-3 text-base font-sans\"><option value=\"Dubai\" selected=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -250,7 +250,7 @@ func PersonaForm(result *estimator.EstimateResult) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\">Ajman</option></select></div><div class=\"form-row\"><label>Transport Mode</label> <select name=\"transport_mode\"><option value=\"mixed\" selected=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\">Ajman</option></select></div><div class=\"flex flex-col gap-1.5\"><label class=\"text-sm text-slate-600\">Transport Mode</label> <select name=\"transport_mode\" class=\"rounded-xl border border-slate-900/[0.15] px-3.5 py-3 text-base font-sans\"><option value=\"mixed\" selected=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -289,7 +289,7 @@ func PersonaForm(result *estimator.EstimateResult) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\">Ride share</option></select></div><div class=\"form-row\"><label>Commute distance (km)</label> <input type=\"number\" min=\"1\" step=\"0.5\" name=\"commute_distance_km\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\">Ride share</option></select></div><div class=\"flex flex-col gap-1.5\"><label class=\"text-sm text-slate-600\">Commute distance (km)</label> <input type=\"number\" min=\"1\" step=\"0.5\" name=\"commute_distance_km\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -302,7 +302,7 @@ func PersonaForm(result *estimator.EstimateResult) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\"></div><div class=\"form-row\"><label>Work days / week</label> <input type=\"number\" min=\"3\" max=\"7\" name=\"work_days_per_week\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\" class=\"rounded-xl border border-slate-900/[0.15] px-3.5 py-3 text-base font-sans\"></div><div class=\"flex flex-col gap-1.5\"><label class=\"text-sm text-slate-600\">Work days / week</label> <input type=\"number\" min=\"3\" max=\"7\" name=\"work_days_per_week\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -315,7 +315,7 @@ func PersonaForm(result *estimator.EstimateResult) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\"></div><button class=\"btn-primary\" type=\"submit\">Recalculate</button><div id=\"form-indicator\" class=\"htmx-indicator\">Updating…</div></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" class=\"rounded-xl border border-slate-900/[0.15] px-3.5 py-3 text-base font-sans\"></div><button class=\"inline-flex items-center justify-center rounded-full px-7 py-3.5 font-semibold text-sm bg-gradient-to-r from-slate-900 to-slate-700 text-white shadow-lg hover:-translate-y-0.5 hover:shadow-xl transition-all duration-150\" type=\"submit\">Recalculate</button><div id=\"form-indicator\" class=\"opacity-0 text-sm text-slate-900 transition-opacity duration-200 htmx-indicator\">Updating…</div></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -344,27 +344,27 @@ func EstimatePanel(result *estimator.EstimateResult) templ.Component {
 			templ_7745c5c3_Var21 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div id=\"estimate-panel\" class=\"panel flex flex-col gap-6\"><div><p class=\"eyebrow\">Estimated monthly burn</p><p class=\"headline\">AED ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div id=\"estimate-panel\" class=\"bg-white rounded-3xl border border-slate-900/[0.08] p-8 shadow-2xl flex flex-col gap-6\"><div><p class=\"uppercase tracking-[0.35em] text-xs text-slate-400\">Estimated monthly burn</p><p class=\"text-[clamp(2.2rem,4vw,2.8rem)] my-1.5 font-semibold\">AED ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(FormatAED(result.MonthlyTotalAED))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 87, Col: 71}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 87, Col: 115}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</p><p class=\"subtle\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</p><p class=\"text-slate-500 text-base\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(TitleCase(string(result.Persona.Lifestyle)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 88, Col: 75}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 88, Col: 93}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
@@ -377,78 +377,78 @@ func EstimatePanel(result *estimator.EstimateResult) templ.Component {
 		var templ_7745c5c3_Var24 string
 		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(result.Persona.Emirate)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 88, Col: 105}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 88, Col: 123}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</p></div><div class=\"grid gap-4 md:grid-cols-3\"><div class=\"stat\"><p class=\"stat-label\">Dataset Samples</p><p class=\"stat-value\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</p></div><div class=\"grid gap-4 md:grid-cols-3\"><div class=\"p-4 rounded-2xl border border-slate-900/[0.08] bg-slate-50/75\"><p class=\"text-xs tracking-[0.2em] uppercase text-slate-400\">Dataset Samples</p><p class=\"text-base font-semibold mt-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var25 string
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(result.Dataset.TotalSamples)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 93, Col: 67}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 93, Col: 85}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</p><p class=\"stat-hint\">Last ingest ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</p><p class=\"text-xs text-slate-500 mt-1\">Last ingest ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var26 string
 		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(humanizeTime(result.Dataset.LastUpdated))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 94, Col: 91}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 94, Col: 109}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</p></div><div class=\"stat\"><p class=\"stat-label\">Coverage</p><p class=\"stat-value\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</p></div><div class=\"p-4 rounded-2xl border border-slate-900/[0.08] bg-slate-50/75\"><p class=\"text-xs tracking-[0.2em] uppercase text-slate-400\">Coverage</p><p class=\"text-base font-semibold mt-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var27 string
 		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(len(result.Dataset.Coverage))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 98, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 98, Col: 86}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, " categories</p><p class=\"stat-hint\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, " categories</p><p class=\"text-xs text-slate-500 mt-1\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var28 string
 		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(strings.Join(result.Dataset.Coverage, ", "))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 99, Col: 82}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 99, Col: 100}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</p></div><div class=\"stat\"><p class=\"stat-label\">Confidence</p><p class=\"stat-value\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</p></div><div class=\"p-4 rounded-2xl border border-slate-900/[0.08] bg-slate-50/75\"><p class=\"text-xs tracking-[0.2em] uppercase text-slate-400\">Confidence</p><p class=\"text-base font-semibold mt-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var29 string
 		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(formatConfidence(result.Breakdown))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 103, Col: 74}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 103, Col: 92}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</p><p class=\"stat-hint\">Scraped + heuristic blend</p></div></div><div class=\"breakdown\"><p class=\"eyebrow\">Breakdown</p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</p><p class=\"text-xs text-slate-500 mt-1\">Scraped + heuristic blend</p></div></div><div class=\"flex flex-col gap-3.5\"><p class=\"uppercase tracking-[0.35em] text-xs text-slate-400\">Breakdown</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -458,7 +458,7 @@ func EstimatePanel(result *estimator.EstimateResult) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</div><div class=\"recommendations\"><p class=\"eyebrow\">Recommendations</p><ul>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</div><div><p class=\"uppercase tracking-[0.35em] text-xs text-slate-400\">Recommendations</p><ul class=\"mt-2 pl-5 text-slate-600 leading-6\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -486,7 +486,7 @@ func EstimatePanel(result *estimator.EstimateResult) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if len(result.Dataset.Warnings) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "<div class=\"warnings\"><p class=\"eyebrow text-amber-500\">Data Warnings</p><ul>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "<div><p class=\"uppercase tracking-[0.35em] text-xs text-amber-500\">Data Warnings</p><ul class=\"mt-2 pl-5 text-slate-600 leading-6\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -543,59 +543,59 @@ func BreakdownRow(item estimator.CategoryEstimate, total float64) templ.Componen
 			templ_7745c5c3_Var32 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<div class=\"breakdown-row\"><div><p class=\"breakdown-title\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<div class=\"border border-slate-900/[0.08] rounded-2xl p-4 grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-2 items-center\"><div><p class=\"m-0 font-semibold\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var33 string
 		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(item.Category)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 137, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 137, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</p><p class=\"breakdown-method\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</p><p class=\"mt-0.5 text-xs tracking-[0.25em] uppercase text-slate-400\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(strings.Title(item.Method))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 138, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 138, Col: 109}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</p></div><div class=\"breakdown-values\"><p class=\"breakdown-amount\">AED ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</p></div><div class=\"flex flex-col gap-0.5 text-sm text-slate-600\"><p class=\"text-lg font-semibold text-slate-900 m-0\">AED ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var35 string
 		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(FormatAED(item.MonthlyAED))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 141, Col: 72}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 141, Col: 96}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "</p><p class=\"breakdown-range\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "</p><p class=\"m-0 text-sm text-slate-400\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var36 string
 		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(formatRange(item.RangeLowAED, item.RangeHighAED))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 142, Col: 89}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/estimator.templ`, Line: 142, Col: 100}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</p></div><div class=\"breakdown-meta\"><span>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</p></div><div class=\"flex flex-col gap-0.5 text-sm text-slate-600\"><span>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

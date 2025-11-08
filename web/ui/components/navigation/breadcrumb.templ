@@ -1,0 +1,195 @@
+package navigation
+
+// BreadcrumbItem represents a single breadcrumb item
+type BreadcrumbItem struct {
+	Text string
+	Href string
+	Icon string // optional icon HTML or emoji
+}
+
+// BreadcrumbProps defines the properties for the Breadcrumb component
+type BreadcrumbProps struct {
+	Items []BreadcrumbItem
+}
+
+// Breadcrumb renders a breadcrumb navigation component
+// Supports dynamic items with proper ARIA labels
+// Features: responsive design, keyboard navigation, semantic HTML
+templ Breadcrumb(props BreadcrumbProps) {
+	<nav aria-label="Breadcrumb" class="flex" role="navigation">
+		<ol class="flex items-center space-x-2 text-sm">
+			<!-- Home Icon (first item) -->
+			<li class="flex items-center">
+				<a
+					href="/"
+					class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md px-2 py-1 transition-colors"
+					aria-label="Home"
+				>
+					<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+					</svg>
+					<span class="sr-only">Home</span>
+				</a>
+			</li>
+
+			<!-- Dynamic Breadcrumb Items -->
+			for i, item := range props.Items {
+				<!-- Separator -->
+				<li class="flex items-center">
+					<svg class="h-4 w-4 text-slate-400 dark:text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+					</svg>
+				</li>
+
+				<!-- Breadcrumb Item -->
+				<li class="flex items-center">
+					if i == len(props.Items)-1 {
+						<!-- Last item (current page) - not a link -->
+						<span
+							class="text-slate-900 dark:text-white font-medium px-2 py-1"
+							aria-current="page"
+						>
+							if item.Icon != "" {
+								<span class="mr-1.5" aria-hidden="true">{ item.Icon }</span>
+							}
+							{ item.Text }
+						</span>
+					} else {
+						<!-- Intermediate items - links -->
+						<a
+							href={ templ.URL(item.Href) }
+							class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md px-2 py-1 transition-colors"
+							aria-label={ "Navigate to " + item.Text }
+						>
+							if item.Icon != "" {
+								<span class="mr-1.5" aria-hidden="true">{ item.Icon }</span>
+							}
+							{ item.Text }
+						</a>
+					}
+				</li>
+			}
+		</ol>
+	</nav>
+}
+
+// BreadcrumbCompact renders a more compact breadcrumb for mobile
+// Shows only the last 2 items with an ellipsis for the rest
+templ BreadcrumbCompact(props BreadcrumbProps) {
+	<nav aria-label="Breadcrumb" class="flex" role="navigation">
+		<ol class="flex items-center space-x-2 text-sm">
+			<!-- Home Icon -->
+			<li class="flex items-center">
+				<a
+					href="/"
+					class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-1 transition-colors"
+					aria-label="Home"
+				>
+					<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+					</svg>
+					<span class="sr-only">Home</span>
+				</a>
+			</li>
+
+			if len(props.Items) > 2 {
+				<!-- Separator -->
+				<li class="flex items-center">
+					<svg class="h-4 w-4 text-slate-400 dark:text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+					</svg>
+				</li>
+
+				<!-- Ellipsis for hidden items -->
+				<li
+					class="flex items-center"
+					x-data="{ open: false }"
+				>
+					<button
+						@click="open = !open"
+						type="button"
+						class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md px-2 py-1 transition-colors"
+						aria-label="Show hidden breadcrumb items"
+						:aria-expanded="open.toString()"
+					>
+						<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"/>
+						</svg>
+					</button>
+
+					<!-- Dropdown with hidden items -->
+					<div
+						x-show="open"
+						x-cloak
+						@click.away="open = false"
+						x-transition:enter="transition ease-out duration-100"
+						x-transition:enter-start="transform opacity-0 scale-95"
+						x-transition:enter-end="transform opacity-100 scale-100"
+						x-transition:leave="transition ease-in duration-75"
+						x-transition:leave-start="transform opacity-100 scale-100"
+						x-transition:leave-end="transform opacity-0 scale-95"
+						class="absolute mt-2 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-2 z-10"
+					>
+						for _, item := range props.Items[:len(props.Items)-2] {
+							<a
+								href={ templ.URL(item.Href) }
+								class="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+								aria-label={ "Navigate to " + item.Text }
+							>
+								{ item.Text }
+							</a>
+						}
+					</div>
+				</li>
+
+				<!-- Show last 2 items -->
+				for i := len(props.Items) - 2; i < len(props.Items); i++ {
+					<li class="flex items-center">
+						<svg class="h-4 w-4 text-slate-400 dark:text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+						</svg>
+					</li>
+					<li class="flex items-center">
+						if i == len(props.Items)-1 {
+							<span class="text-slate-900 dark:text-white font-medium px-2 py-1 truncate max-w-[150px]" aria-current="page">
+								{ props.Items[i].Text }
+							</span>
+						} else {
+							<a
+								href={ templ.URL(props.Items[i].Href) }
+								class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md px-2 py-1 truncate max-w-[150px] transition-colors"
+								aria-label={ "Navigate to " + props.Items[i].Text }
+							>
+								{ props.Items[i].Text }
+							</a>
+						}
+					</li>
+				}
+			} else {
+				<!-- Show all items if 2 or fewer -->
+				for i, item := range props.Items {
+					<li class="flex items-center">
+						<svg class="h-4 w-4 text-slate-400 dark:text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+						</svg>
+					</li>
+					<li class="flex items-center">
+						if i == len(props.Items)-1 {
+							<span class="text-slate-900 dark:text-white font-medium px-2 py-1" aria-current="page">
+								{ item.Text }
+							</span>
+						} else {
+							<a
+								href={ templ.URL(item.Href) }
+								class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md px-2 py-1 transition-colors"
+								aria-label={ "Navigate to " + item.Text }
+							>
+								{ item.Text }
+							</a>
+						}
+					</li>
+				}
+			}
+		</ol>
+	</nav>
+}

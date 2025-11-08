@@ -1,0 +1,106 @@
+package core
+
+type InputProps struct {
+	Type        string            // text, email, number, password, search
+	Name        string
+	ID          string
+	Value       string
+	Placeholder string
+	Disabled    bool
+	Required    bool
+	Class       string            // additional classes
+	HxAttrs     map[string]string // HTMX attributes
+	AlpineData  string            // Alpine.js x-data
+	AriaLabel   string
+	Min         string // for number type
+	Max         string // for number type
+	Step        string // for number type
+	Pattern     string
+}
+
+func getInputClasses(props InputProps) string {
+	baseClasses := "flex h-10 w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 py-2 text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 dark:focus-visible:ring-slate-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+
+	if props.Class != "" {
+		return baseClasses + " " + props.Class
+	}
+	return baseClasses
+}
+
+templ Input(props InputProps) {
+	<input
+		type={ props.Type }
+		if props.Name != "" {
+			name={ props.Name }
+		}
+		if props.ID != "" {
+			id={ props.ID }
+		}
+		if props.Value != "" {
+			value={ props.Value }
+		}
+		if props.Placeholder != "" {
+			placeholder={ props.Placeholder }
+		}
+		class={ getInputClasses(props) }
+		if props.Disabled {
+			disabled
+		}
+		if props.Required {
+			required
+		}
+		if props.AriaLabel != "" {
+			aria-label={ props.AriaLabel }
+		}
+		if props.AlpineData != "" {
+			x-data={ props.AlpineData }
+		}
+		if props.Min != "" {
+			min={ props.Min }
+		}
+		if props.Max != "" {
+			max={ props.Max }
+		}
+		if props.Step != "" {
+			step={ props.Step }
+		}
+		if props.Pattern != "" {
+			pattern={ props.Pattern }
+		}
+	/>
+}
+
+type InputGroupProps struct {
+	Label      string
+	LabelFor   string
+	Error      string
+	Hint       string
+	Required   bool
+	Class      string
+	InputProps InputProps
+}
+
+templ InputGroup(props InputGroupProps) {
+	<div class={ "space-y-2 " + props.Class }>
+		if props.Label != "" {
+			<label
+				if props.LabelFor != "" {
+					for={ props.LabelFor }
+				}
+				class="text-sm font-medium text-slate-900 dark:text-slate-100"
+			>
+				{ props.Label }
+				if props.Required {
+					<span class="text-red-600 dark:text-red-500">*</span>
+				}
+			</label>
+		}
+		@Input(props.InputProps)
+		if props.Hint != "" && props.Error == "" {
+			<p class="text-xs text-slate-500 dark:text-slate-400">{ props.Hint }</p>
+		}
+		if props.Error != "" {
+			<p class="text-xs text-red-600 dark:text-red-500" role="alert">{ props.Error }</p>
+		}
+	</div>
+}

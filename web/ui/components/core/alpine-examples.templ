@@ -1,0 +1,399 @@
+package core
+
+// AlpineExamples provides comprehensive examples combining multiple patterns
+// These demonstrate real-world usage of Alpine.js features inline
+
+// COMPLETE EXAMPLE 1: Form with Validation + Persistence + Toast
+// This example shows how to combine validation, persistence, and notifications
+templ CompleteFormExample() {
+	<div class="max-w-2xl mx-auto space-y-6 p-6">
+		<h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Complete Form Example</h2>
+		<p class="text-slate-600 dark:text-slate-400">
+			This form demonstrates validation, auto-save persistence, and toast notifications all working together.
+		</p>
+		<form
+			x-data="{
+				// Form data with localStorage persistence
+				formData: JSON.parse(localStorage.getItem('contactForm') || '{&quot;name&quot;:&quot;&quot;,&quot;email&quot;:&quot;&quot;,&quot;company&quot;:&quot;&quot;,&quot;budget&quot;:&quot;&quot;,&quot;message&quot;:&quot;&quot;}'),
+				errors: {},
+				touched: {},
+				lastSaved: localStorage.getItem('contactForm_timestamp'),
+
+				// Validation methods
+				validateName() {
+					this.touched.name = true;
+					if (!this.formData.name || this.formData.name.trim().length < 2) {
+						this.errors.name = 'Name must be at least 2 characters';
+						return false;
+					}
+					delete this.errors.name;
+					return true;
+				},
+
+				validateEmail() {
+					this.touched.email = true;
+					const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+					if (!regex.test(this.formData.email)) {
+						this.errors.email = 'Please enter a valid email';
+						return false;
+					}
+					delete this.errors.email;
+					return true;
+				},
+
+				validateBudget() {
+					this.touched.budget = true;
+					const num = parseFloat(this.formData.budget);
+					if (isNaN(num) || num < 1000 || num > 1000000) {
+						this.errors.budget = 'Budget must be between 1,000 and 1,000,000';
+						return false;
+					}
+					delete this.errors.budget;
+					return true;
+				},
+
+				validateMessage() {
+					this.touched.message = true;
+					if (!this.formData.message || this.formData.message.trim().length < 20) {
+						this.errors.message = 'Message must be at least 20 characters';
+						return false;
+					}
+					delete this.errors.message;
+					return true;
+				},
+
+				validateAll() {
+					const results = [
+						this.validateName(),
+						this.validateEmail(),
+						this.validateBudget(),
+						this.validateMessage()
+					];
+					return results.every(r => r === true);
+				},
+
+				// Persistence
+				saveForm() {
+					localStorage.setItem('contactForm', JSON.stringify(this.formData));
+					localStorage.setItem('contactForm_timestamp', new Date().toISOString());
+					this.lastSaved = new Date().toISOString();
+				},
+
+				clearForm() {
+					localStorage.removeItem('contactForm');
+					localStorage.removeItem('contactForm_timestamp');
+					this.formData = {name: '', email: '', company: '', budget: '', message: ''};
+					this.errors = {};
+					this.touched = {};
+					this.lastSaved = null;
+				},
+
+				// Submission
+				async submitForm() {
+					if (!this.validateAll()) {
+						if (window.toastStore) {
+							window.toastStore.error('Please fix all errors before submitting');
+						}
+						return;
+					}
+
+					try {
+						// Simulate API call
+						await new Promise(resolve => setTimeout(resolve, 1000));
+
+						if (window.toastStore) {
+							window.toastStore.success('Form submitted successfully!');
+						}
+
+						console.log('Submitted:', this.formData);
+						this.clearForm();
+					} catch (error) {
+						if (window.toastStore) {
+							window.toastStore.error('Failed to submit form. Please try again.');
+						}
+					}
+				}
+			}"
+			@submit.prevent="submitForm()"
+			class="space-y-6 bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700"
+		>
+			<!-- Auto-save indicator -->
+			<div x-show="lastSaved" x-cloak class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+				<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+				</svg>
+				<span>Auto-saved <span x-text="lastSaved ? new Date(lastSaved).toLocaleTimeString() : ''"></span></span>
+			</div>
+
+			<!-- Name Field -->
+			<div>
+				<label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">
+					Name <span class="text-red-600">*</span>
+				</label>
+				<input
+					type="text"
+					x-model="formData.name"
+					@blur="validateName()"
+					@input="touched.name && validateName(); saveForm()"
+					placeholder="John Doe"
+					class="w-full px-3 py-2 border rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-colors"
+					:class="errors.name ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'"
+				/>
+				<p x-show="errors.name" x-cloak class="mt-1 text-xs text-red-600" x-text="errors.name"></p>
+			</div>
+
+			<!-- Email Field -->
+			<div>
+				<label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">
+					Email <span class="text-red-600">*</span>
+				</label>
+				<input
+					type="email"
+					x-model="formData.email"
+					@blur="validateEmail()"
+					@input="touched.email && validateEmail(); saveForm()"
+					placeholder="john@example.com"
+					class="w-full px-3 py-2 border rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-colors"
+					:class="errors.email ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'"
+				/>
+				<p x-show="errors.email" x-cloak class="mt-1 text-xs text-red-600" x-text="errors.email"></p>
+			</div>
+
+			<!-- Company Field (optional) -->
+			<div>
+				<label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">
+					Company
+				</label>
+				<input
+					type="text"
+					x-model="formData.company"
+					@input="saveForm()"
+					placeholder="Acme Inc."
+					class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-colors"
+				/>
+			</div>
+
+			<!-- Budget Field -->
+			<div>
+				<label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">
+					Budget (AED) <span class="text-red-600">*</span>
+				</label>
+				<input
+					type="number"
+					x-model="formData.budget"
+					@blur="validateBudget()"
+					@input="touched.budget && validateBudget(); saveForm()"
+					placeholder="50000"
+					min="1000"
+					max="1000000"
+					class="w-full px-3 py-2 border rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-colors"
+					:class="errors.budget ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'"
+				/>
+				<p x-show="errors.budget" x-cloak class="mt-1 text-xs text-red-600" x-text="errors.budget"></p>
+			</div>
+
+			<!-- Message Field -->
+			<div>
+				<label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">
+					Message <span class="text-red-600">*</span>
+				</label>
+				<textarea
+					x-model="formData.message"
+					@blur="validateMessage()"
+					@input="touched.message && validateMessage(); saveForm()"
+					placeholder="Tell us about your project..."
+					rows="4"
+					class="w-full px-3 py-2 border rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-colors"
+					:class="errors.message ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'"
+				></textarea>
+				<p x-show="errors.message" x-cloak class="mt-1 text-xs text-red-600" x-text="errors.message"></p>
+			</div>
+
+			<!-- Actions -->
+			<div class="flex gap-3 pt-4">
+				<button
+					type="submit"
+					class="flex-1 px-4 py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-md hover:bg-slate-800 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-colors font-medium"
+				>
+					Submit Form
+				</button>
+				<button
+					type="button"
+					@click="clearForm()"
+					class="px-4 py-2 bg-slate-200 dark:bg-slate-600 text-slate-900 dark:text-slate-100 rounded-md hover:bg-slate-300 dark:hover:bg-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-colors"
+				>
+					Clear
+				</button>
+			</div>
+		</form>
+	</div>
+}
+
+// COMPLETE EXAMPLE 2: Estimator form pattern
+// Pattern for the UAE Cost estimator form with validation and persistence
+templ EstimatorFormPattern() {
+	<div class="max-w-2xl mx-auto space-y-6 p-6">
+		<h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Estimator Form Pattern</h2>
+		<p class="text-slate-600 dark:text-slate-400">
+			Copy this pattern for the persona/estimator form with inline validation and auto-save.
+		</p>
+		<form
+			x-data="{
+				// Form data matching the estimator persona structure
+				persona: JSON.parse(localStorage.getItem('estimatorPersona') || '{&quot;adults&quot;:1,&quot;children&quot;:0,&quot;bedrooms&quot;:1,&quot;housing_type&quot;:&quot;apartment&quot;,&quot;lifestyle&quot;:&quot;moderate&quot;,&quot;emirate&quot;:&quot;Dubai&quot;,&quot;transport_mode&quot;:&quot;mixed&quot;,&quot;commute_distance_km&quot;:10,&quot;work_days_per_week&quot;:5}'),
+				errors: {},
+				touched: {},
+
+				// Validation
+				validateAdults() {
+					this.touched.adults = true;
+					if (this.persona.adults < 1) {
+						this.errors.adults = 'At least 1 adult required';
+						return false;
+					}
+					delete this.errors.adults;
+					return true;
+				},
+
+				validateBedrooms() {
+					this.touched.bedrooms = true;
+					if (this.persona.bedrooms < 1) {
+						this.errors.bedrooms = 'At least 1 bedroom required';
+						return false;
+					}
+					delete this.errors.bedrooms;
+					return true;
+				},
+
+				validateCommuteDistance() {
+					this.touched.commute_distance_km = true;
+					if (this.persona.commute_distance_km < 0 || this.persona.commute_distance_km > 200) {
+						this.errors.commute_distance_km = 'Distance must be between 0 and 200 km';
+						return false;
+					}
+					delete this.errors.commute_distance_km;
+					return true;
+				},
+
+				// Auto-save to localStorage
+				savePersona() {
+					localStorage.setItem('estimatorPersona', JSON.stringify(this.persona));
+				},
+
+				// Form submission (can work with HTMX)
+				submitForm() {
+					const isValid = this.validateAdults() && this.validateBedrooms() && this.validateCommuteDistance();
+					if (isValid) {
+						this.savePersona();
+						return true;
+					}
+					return false;
+				}
+			}"
+			hx-post="/ui/estimate"
+			hx-target="#estimate-panel"
+			hx-swap="outerHTML"
+			@submit="submitForm()"
+			class="grid gap-4 md:grid-cols-2 bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700"
+		>
+			<!-- Adults -->
+			<div>
+				<label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">
+					Adults <span class="text-red-600">*</span>
+				</label>
+				<input
+					type="number"
+					x-model.number="persona.adults"
+					@blur="validateAdults()"
+					@input="touched.adults && validateAdults(); savePersona()"
+					min="1"
+					class="w-full px-3 py-2 border rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+					:class="errors.adults ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'"
+				/>
+				<p x-show="errors.adults" x-cloak class="mt-1 text-xs text-red-600" x-text="errors.adults"></p>
+			</div>
+
+			<!-- Children -->
+			<div>
+				<label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">Children</label>
+				<input
+					type="number"
+					x-model.number="persona.children"
+					@input="savePersona()"
+					min="0"
+					class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+				/>
+			</div>
+
+			<!-- Bedrooms -->
+			<div>
+				<label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">
+					Bedrooms <span class="text-red-600">*</span>
+				</label>
+				<input
+					type="number"
+					x-model.number="persona.bedrooms"
+					@blur="validateBedrooms()"
+					@input="touched.bedrooms && validateBedrooms(); savePersona()"
+					min="1"
+					class="w-full px-3 py-2 border rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+					:class="errors.bedrooms ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'"
+				/>
+				<p x-show="errors.bedrooms" x-cloak class="mt-1 text-xs text-red-600" x-text="errors.bedrooms"></p>
+			</div>
+
+			<!-- Housing Type -->
+			<div>
+				<label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">Housing Type</label>
+				<select
+					x-model="persona.housing_type"
+					@change="savePersona()"
+					class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+				>
+					<option value="apartment">Apartment</option>
+					<option value="villa">Villa</option>
+					<option value="shared">Shared</option>
+				</select>
+			</div>
+
+			<!-- Lifestyle -->
+			<div>
+				<label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">Lifestyle</label>
+				<select
+					x-model="persona.lifestyle"
+					@change="savePersona()"
+					class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+				>
+					<option value="budget">Budget</option>
+					<option value="moderate">Moderate</option>
+					<option value="premium">Premium</option>
+				</select>
+			</div>
+
+			<!-- Emirate -->
+			<div>
+				<label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">Emirate</label>
+				<select
+					x-model="persona.emirate"
+					@change="savePersona()"
+					class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+				>
+					<option value="Dubai">Dubai</option>
+					<option value="Abu Dhabi">Abu Dhabi</option>
+					<option value="Sharjah">Sharjah</option>
+					<option value="Ajman">Ajman</option>
+				</select>
+			</div>
+
+			<!-- Submit -->
+			<div class="md:col-span-2">
+				<button
+					type="submit"
+					class="w-full px-4 py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-md hover:bg-slate-800 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-colors font-medium"
+				>
+					Calculate Estimate
+				</button>
+			</div>
+		</form>
+	</div>
+}

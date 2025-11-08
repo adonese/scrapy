@@ -8,6 +8,8 @@ package ui
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
+import "github.com/adonese/cost-of-living/web/ui/components/navigation"
+
 func BaseLayout(title string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -29,20 +31,28 @@ func BaseLayout(title string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\" class=\"h-full bg-slate-50\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\" class=\"h-full bg-slate-50 dark:bg-slate-900 transition-colors\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/base.templ`, Line: 9, Col: 26}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/ui/base.templ`, Line: 11, Col: 26}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><link rel=\"preconnect\" href=\"https://fonts.googleapis.com\"><link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin><link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap\" rel=\"stylesheet\"><link rel=\"stylesheet\" href=\"/static/css/app.css\"><script src=\"https://unpkg.com/htmx.org@1.9.12\" defer></script><script src=\"https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js\" defer></script></head><body class=\"min-h-full font-sans text-slate-900\"><div id=\"app\" class=\"min-h-screen flex flex-col\"><header class=\"border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-40\"><div class=\"container\"><div class=\"flex items-center justify-between py-4\"><div class=\"flex items-center gap-3\"><div class=\"h-10 w-10 rounded-lg bg-slate-900 text-white flex items-center justify-center font-semibold tracking-tight\">U</div><div><p class=\"text-sm uppercase tracking-[0.2em] text-slate-500\">Scrapy Labs</p><p class=\"text-lg font-semibold tracking-tight text-slate-900\">UAE Cost of Living</p></div></div><div class=\"hidden md:flex items-center gap-6 text-sm text-slate-600\"><a href=\"#estimator\" class=\"hover:text-slate-900\">Estimator</a> <a href=\"#insights\" class=\"hover:text-slate-900\">Insights</a> <a href=\"#data\" class=\"hover:text-slate-900\">Raw Data</a></div><div class=\"text-xs uppercase tracking-[0.3em] text-slate-400\">Live data</div></div></div></header><main class=\"flex-1\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><link rel=\"preconnect\" href=\"https://fonts.googleapis.com\"><link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin><link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap\" rel=\"stylesheet\"><link rel=\"stylesheet\" href=\"/static/css/output.css\"><script src=\"https://unpkg.com/htmx.org@2.0.4\" integrity=\"sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+\" crossorigin=\"anonymous\"></script><script defer src=\"https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js\"></script><script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js\"></script><script>\n                // Safe localStorage wrapper for tracking prevention\n                window.safeStorage = {\n                    getItem: function(key) {\n                        try {\n                            return localStorage.getItem(key);\n                        } catch (e) {\n                            console.warn('localStorage blocked:', e);\n                            return null;\n                        }\n                    },\n                    setItem: function(key, value) {\n                        try {\n                            localStorage.setItem(key, value);\n                        } catch (e) {\n                            console.warn('localStorage blocked:', e);\n                        }\n                    },\n                    removeItem: function(key) {\n                        try {\n                            localStorage.removeItem(key);\n                        } catch (e) {\n                            console.warn('localStorage blocked:', e);\n                        }\n                    }\n                };\n\n                // Initialize Alpine data before Alpine loads\n                document.addEventListener('alpine:init', () => {\n                    // Global Alpine store for theme (fallback to light if storage blocked)\n                    Alpine.store('theme', {\n                        current: window.safeStorage.getItem('theme') || 'light',\n                        toggle() {\n                            this.current = this.current === 'dark' ? 'light' : 'dark';\n                            window.safeStorage.setItem('theme', this.current);\n                            if (this.current === 'dark') {\n                                document.documentElement.classList.add('dark');\n                            } else {\n                                document.documentElement.classList.remove('dark');\n                            }\n                        },\n                        init() {\n                            // Apply saved theme on load\n                            if (this.current === 'dark') {\n                                document.documentElement.classList.add('dark');\n                            }\n                        }\n                    });\n                });\n            </script><style>\n                [x-cloak] { display: none !important; }\n            </style></head><body class=\"min-h-full font-sans text-slate-900 dark:text-slate-100 dark:bg-slate-900 transition-colors\"><div id=\"app\" class=\"min-h-screen flex flex-col\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = navigation.Navbar().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<main class=\"flex-1\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -50,7 +60,7 @@ func BaseLayout(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</main><footer class=\"bg-slate-900 text-slate-200 py-10 mt-20\"><div class=\"container grid gap-6 md:grid-cols-3\"><div><p class=\"text-xs uppercase tracking-[0.2em] text-slate-400\">About</p><p class=\"mt-2 text-sm text-slate-300\">Scrapy keeps UAE expats updated with live housing, utilities, and transport costs powered by our crawler fleet.</p></div><div><p class=\"text-xs uppercase tracking-[0.2em] text-slate-400\">Stack</p><ul class=\"mt-2 text-sm text-slate-300 space-y-1\"><li>Go + Echo + Temporal</li><li>Templ + HTMX + Alpine</li><li>Postgres + Timescale</li></ul></div><div><p class=\"text-xs uppercase tracking-[0.2em] text-slate-400\">Status</p><p class=\"mt-2 text-sm text-slate-300\">Automated scrapers run on cadence; UI updates instantly through HTMX requests.</p></div></div></footer></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</main><footer class=\"bg-slate-900 dark:bg-slate-950 text-slate-200 dark:text-slate-300 py-10 mt-20\"><div class=\"max-w-7xl mx-auto px-4 grid gap-6 md:grid-cols-3\"><div><p class=\"text-xs uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500\">About</p><p class=\"mt-2 text-sm text-slate-300 dark:text-slate-400\">Scrapy keeps UAE expats updated with live housing, utilities, and transport costs powered by our crawler fleet.</p></div><div><p class=\"text-xs uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500\">Stack</p><ul class=\"mt-2 text-sm text-slate-300 dark:text-slate-400 space-y-1\"><li>Go + Echo + Temporal</li><li>Templ + HTMX + Alpine</li><li>Postgres + Timescale</li></ul></div><div><p class=\"text-xs uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500\">Status</p><p class=\"mt-2 text-sm text-slate-300 dark:text-slate-400\">Automated scrapers run on cadence; UI updates instantly through HTMX requests.</p></div></div></footer></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

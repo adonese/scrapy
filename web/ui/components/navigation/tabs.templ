@@ -1,0 +1,217 @@
+package navigation
+
+// TabItem represents a single tab
+type TabItem struct {
+	ID      string // unique identifier for the tab
+	Label   string // display text
+	Icon    string // optional icon HTML/emoji
+	Badge   string // optional badge text (e.g., "3" for notifications)
+	Href    string // optional href for HTMX loading
+	Content templ.Component // optional inline content
+}
+
+// TabsProps defines the properties for the Tabs component
+type TabsProps struct {
+	Tabs          []TabItem
+	DefaultTab    string // ID of the default active tab
+	Variant       string // "underline" (default), "pills", "boxed"
+	Size          string // "sm", "md" (default), "lg"
+	UseHTMX       bool   // true to use HTMX for dynamic content loading
+	HTMXTarget    string // target element ID for HTMX content
+	HTMXIndicator string // loading indicator selector
+}
+
+// Tabs renders a tab navigation component with Alpine.js state management
+// Can be used with inline content or HTMX for dynamic loading
+// Features: keyboard navigation, ARIA labels, smooth transitions
+templ Tabs(props TabsProps) {
+	<div
+		x-data={ "{ activeTab: '" + props.DefaultTab + "' }" }
+		class="w-full"
+		role="tablist"
+		@keydown.right="$focus.wrap().next()"
+		@keydown.left="$focus.wrap().previous()"
+	>
+		<!-- Tab Navigation -->
+		<div
+			class={
+				"border-b border-slate-200 dark:border-slate-700",
+				templ.KV("flex space-x-1", props.Variant == "pills" || props.Variant == "boxed"),
+				templ.KV("flex", props.Variant == "" || props.Variant == "underline"),
+			}
+		>
+			for _, tab := range props.Tabs {
+				if props.UseHTMX && tab.Href != "" {
+					<!-- HTMX-enabled tab button -->
+					<button
+						@click={ "activeTab = '" + tab.ID + "'" }
+						:aria-selected={ "activeTab === '" + tab.ID + "'" }
+						type="button"
+						role="tab"
+						class={
+							"relative inline-flex items-center gap-2 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all",
+							templ.KV("px-3 py-2 text-sm", props.Size == "" || props.Size == "md"),
+							templ.KV("px-2 py-1.5 text-xs", props.Size == "sm"),
+							templ.KV("px-4 py-3 text-base", props.Size == "lg"),
+							templ.KV("border-b-2 border-transparent", props.Variant == "" || props.Variant == "underline"),
+							templ.KV("rounded-lg", props.Variant == "pills" || props.Variant == "boxed"),
+						}
+						:class={
+							"activeTab === '" + tab.ID + "' ? '" +
+								getActiveClasses(props.Variant) +
+								"' : '" +
+								getInactiveClasses(props.Variant) +
+								"'",
+						}
+						hx-get={ tab.Href }
+						hx-target={ "#" + props.HTMXTarget }
+						hx-trigger="click"
+						if props.HTMXIndicator != "" {
+							hx-indicator={ props.HTMXIndicator }
+						}
+						hx-swap="innerHTML transition:true"
+					>
+						if tab.Icon != "" {
+							<span aria-hidden="true">{ tab.Icon }</span>
+						}
+						<span>{ tab.Label }</span>
+						if tab.Badge != "" {
+							<span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+								{ tab.Badge }
+							</span>
+						}
+					</button>
+				} else {
+					<!-- Regular tab button (no HTMX) -->
+					<button
+						@click={ "activeTab = '" + tab.ID + "'" }
+						:aria-selected={ "activeTab === '" + tab.ID + "'" }
+						type="button"
+						role="tab"
+						class={
+							"relative inline-flex items-center gap-2 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all",
+							templ.KV("px-3 py-2 text-sm", props.Size == "" || props.Size == "md"),
+							templ.KV("px-2 py-1.5 text-xs", props.Size == "sm"),
+							templ.KV("px-4 py-3 text-base", props.Size == "lg"),
+							templ.KV("border-b-2 border-transparent", props.Variant == "" || props.Variant == "underline"),
+							templ.KV("rounded-lg", props.Variant == "pills" || props.Variant == "boxed"),
+						}
+						:class={
+							"activeTab === '" + tab.ID + "' ? '" +
+								getActiveClasses(props.Variant) +
+								"' : '" +
+								getInactiveClasses(props.Variant) +
+								"'",
+						}
+					>
+						if tab.Icon != "" {
+							<span aria-hidden="true">{ tab.Icon }</span>
+						}
+						<span>{ tab.Label }</span>
+						if tab.Badge != "" {
+							<span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+								{ tab.Badge }
+							</span>
+						}
+					</button>
+				}
+			}
+		</div>
+
+		<!-- Tab Content Panels (only if not using HTMX) -->
+		if !props.UseHTMX {
+			<div class="mt-4">
+				for _, tab := range props.Tabs {
+					if tab.Content != nil {
+						<div
+							x-show={ "activeTab === '" + tab.ID + "'" }
+							x-cloak
+							x-transition:enter="transition ease-out duration-200"
+							x-transition:enter-start="opacity-0 transform translate-y-1"
+							x-transition:enter-end="opacity-100 transform translate-y-0"
+							x-transition:leave="transition ease-in duration-150"
+							x-transition:leave-start="opacity-100 transform translate-y-0"
+							x-transition:leave-end="opacity-0 transform translate-y-1"
+							role="tabpanel"
+							aria-labelledby={ tab.ID }
+						>
+							@tab.Content
+						</div>
+					}
+				}
+			</div>
+		} else {
+			<!-- HTMX content target -->
+			<div
+				id={ props.HTMXTarget }
+				class="mt-4"
+				role="tabpanel"
+			>
+				<!-- Dynamic content loaded here -->
+			</div>
+		}
+
+		<!-- Loading indicator (if HTMX is used) -->
+		if props.UseHTMX && props.HTMXIndicator != "" {
+			<div id={ props.HTMXIndicator } class="htmx-indicator">
+				<div class="flex items-center justify-center py-8">
+					<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+					<span class="ml-3 text-slate-600 dark:text-slate-400">Loading...</span>
+				</div>
+			</div>
+		}
+	</div>
+}
+
+// getActiveClasses returns the active state classes based on variant
+func getActiveClasses(variant string) string {
+	switch variant {
+	case "pills":
+		return "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-medium"
+	case "boxed":
+		return "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-medium shadow-sm border border-slate-200 dark:border-slate-700"
+	default: // underline
+		return "border-blue-600 text-blue-600 dark:text-blue-400 font-medium"
+	}
+}
+
+// getInactiveClasses returns the inactive state classes based on variant
+func getInactiveClasses(variant string) string {
+	switch variant {
+	case "pills", "boxed":
+		return "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+	default: // underline
+		return "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-600"
+	}
+}
+
+// TabContent is a helper component for defining tab content
+templ TabContent(content string) {
+	<div class="prose dark:prose-invert max-w-none">
+		{ content }
+	</div>
+}
+
+// TabsSimple is a simplified tabs component for quick use
+templ TabsSimple(tabs []TabItem, defaultTab string) {
+	@Tabs(TabsProps{
+		Tabs:       tabs,
+		DefaultTab: defaultTab,
+		Variant:    "underline",
+		Size:       "md",
+		UseHTMX:    false,
+	})
+}
+
+// TabsHTMX is a tabs component pre-configured for HTMX usage
+templ TabsHTMX(tabs []TabItem, defaultTab string, targetID string) {
+	@Tabs(TabsProps{
+		Tabs:          tabs,
+		DefaultTab:    defaultTab,
+		Variant:       "underline",
+		Size:          "md",
+		UseHTMX:       true,
+		HTMXTarget:    targetID,
+		HTMXIndicator: "loading-indicator",
+	})
+}

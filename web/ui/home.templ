@@ -1,55 +1,70 @@
 package ui
 
-import "github.com/adonese/cost-of-living/internal/services/estimator"
+import (
+	"github.com/adonese/cost-of-living/internal/services/estimator"
+	"github.com/adonese/cost-of-living/web/ui/components/core"
+)
 
 templ HeroSection() {
-    <section class="bg-gradient-to-b from-white to-slate-100" id="hero">
-        <div class="container grid gap-10 py-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] items-center">
+    <section class="bg-gradient-to-b from-white dark:from-slate-900 to-slate-100 dark:to-slate-950 transition-colors" id="hero">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid gap-10 py-16 lg:py-20 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] items-center">
             <div>
-                <p class="text-xs uppercase tracking-[0.5em] text-slate-500">Live UAE Costs</p>
-                <h1 class="mt-5 text-4xl md:text-5xl font-semibold tracking-tight text-slate-900 leading-[1.1]">
+                <p class="text-xs uppercase tracking-[0.5em] text-slate-500 dark:text-slate-400">Live UAE Costs</p>
+                <h1 class="mt-5 text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 leading-[1.1]">
                     Smarter cost-of-living calls for expats who refuse guesswork.
                 </h1>
-                <p class="mt-6 text-lg text-slate-600">
+                <p class="mt-6 text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
                     Scrapy aggregates housing, utilities, and transportation data in near real-time so you can model real budgets per emirate, persona, and lifestyle.
                 </p>
                 <div class="mt-8 flex flex-wrap gap-4">
-                    <a href="#estimator" class="btn-primary">Launch estimator</a>
-                    <a href="#data" class="btn-secondary">See raw data</a>
+                    <a href="#estimator" class="no-underline">
+                        @core.ButtonText(core.ButtonProps{
+                            Variant: "primary",
+                            Size: "lg",
+                            Class: "rounded-full shadow-lg hover:-translate-y-0.5 hover:shadow-xl bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-700 dark:to-slate-600",
+                        }, "Launch estimator")
+                    </a>
+                    <a href="#data" class="no-underline">
+                        @core.ButtonText(core.ButtonProps{
+                            Variant: "secondary",
+                            Size: "lg",
+                            Class: "rounded-full",
+                        }, "See raw data")
+                    </a>
                 </div>
                 <dl class="mt-10 grid gap-8 sm:grid-cols-3">
                     <div>
-                        <dt class="text-xs uppercase tracking-[0.3em] text-slate-500">Listings tracked</dt>
-                        <dd class="mt-2 text-3xl font-semibold text-slate-900">10k+</dd>
+                        <dt class="text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Listings tracked</dt>
+                        <dd class="mt-2 text-3xl font-semibold text-slate-900 dark:text-slate-100">10k+</dd>
                     </div>
                     <div>
-                        <dt class="text-xs uppercase tracking-[0.3em] text-slate-500">Utility tariffs</dt>
-                        <dd class="mt-2 text-3xl font-semibold text-slate-900">70+</dd>
+                        <dt class="text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Utility tariffs</dt>
+                        <dd class="mt-2 text-3xl font-semibold text-slate-900 dark:text-slate-100">70+</dd>
                     </div>
                     <div>
-                        <dt class="text-xs uppercase tracking-[0.3em] text-slate-500">Transit routes</dt>
-                        <dd class="mt-2 text-3xl font-semibold text-slate-900">40+</dd>
+                        <dt class="text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Transit routes</dt>
+                        <dd class="mt-2 text-3xl font-semibold text-slate-900 dark:text-slate-100">40+</dd>
                     </div>
                 </dl>
             </div>
-            <div class="bg-white/80 backdrop-blur rounded-2xl shadow-xl border border-white/60 p-6">
-                <p class="text-xs uppercase tracking-[0.4em] text-slate-500">Telemetry</p>
+            <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur rounded-2xl shadow-xl border border-white/60 dark:border-slate-700/60 p-6 transition-colors">
+                <p class="text-xs uppercase tracking-[0.4em] text-slate-500 dark:text-slate-400">Telemetry</p>
                 <div class="mt-4 space-y-4">
-                    <div class="stat">
-                        <p class="stat-label">Housing scrapers</p>
-                        <p class="stat-value">Bayut · Dubizzle · Shared Spaces</p>
+                    <div class="p-4 rounded-2xl border border-slate-900/[0.08] dark:border-slate-700/50 bg-slate-50/75 dark:bg-slate-900/50 transition-colors">
+                        <p class="text-xs tracking-[0.2em] uppercase text-slate-400 dark:text-slate-500">Housing scrapers</p>
+                        <p class="text-base font-semibold mt-2 dark:text-slate-200">Bayut · Dubizzle · Shared Spaces</p>
                     </div>
-                    <div class="stat">
-                        <p class="stat-label">Utilities</p>
-                        <p class="stat-value">DEWA · SEWA · AADC</p>
+                    <div class="p-4 rounded-2xl border border-slate-900/[0.08] dark:border-slate-700/50 bg-slate-50/75 dark:bg-slate-900/50 transition-colors">
+                        <p class="text-xs tracking-[0.2em] uppercase text-slate-400 dark:text-slate-500">Utilities</p>
+                        <p class="text-base font-semibold mt-2 dark:text-slate-200">DEWA · SEWA · AADC</p>
                     </div>
-                    <div class="stat">
-                        <p class="stat-label">Transport</p>
-                        <p class="stat-value">RTA · Careem</p>
+                    <div class="p-4 rounded-2xl border border-slate-900/[0.08] dark:border-slate-700/50 bg-slate-50/75 dark:bg-slate-900/50 transition-colors">
+                        <p class="text-xs tracking-[0.2em] uppercase text-slate-400 dark:text-slate-500">Transport</p>
+                        <p class="text-base font-semibold mt-2 dark:text-slate-200">RTA · Careem</p>
                     </div>
-                    <div class="stat">
-                        <p class="stat-label">Workflow</p>
-                        <p class="stat-value">Temporal orchestrated</p>
+                    <div class="p-4 rounded-2xl border border-slate-900/[0.08] dark:border-slate-700/50 bg-slate-50/75 dark:bg-slate-900/50 transition-colors">
+                        <p class="text-xs tracking-[0.2em] uppercase text-slate-400 dark:text-slate-500">Workflow</p>
+                        <p class="text-base font-semibold mt-2 dark:text-slate-200">Temporal orchestrated</p>
                     </div>
                 </div>
             </div>

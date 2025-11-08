@@ -1,0 +1,102 @@
+package core
+
+type SelectOption struct {
+	Value    string
+	Label    string
+	Disabled bool
+	Selected bool
+}
+
+type SelectProps struct {
+	Name        string
+	ID          string
+	Options     []SelectOption
+	Disabled    bool
+	Required    bool
+	Class       string            // additional classes
+	HxAttrs     map[string]string // HTMX attributes
+	AlpineData  string            // Alpine.js x-data
+	AriaLabel   string
+}
+
+func getSelectClasses(props SelectProps) string {
+	baseClasses := "flex h-10 w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 dark:focus-visible:ring-slate-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+
+	if props.Class != "" {
+		return baseClasses + " " + props.Class
+	}
+	return baseClasses
+}
+
+templ Select(props SelectProps) {
+	<select
+		if props.Name != "" {
+			name={ props.Name }
+		}
+		if props.ID != "" {
+			id={ props.ID }
+		}
+		class={ getSelectClasses(props) }
+		if props.Disabled {
+			disabled
+		}
+		if props.Required {
+			required
+		}
+		if props.AriaLabel != "" {
+			aria-label={ props.AriaLabel }
+		}
+		if props.AlpineData != "" {
+			x-data={ props.AlpineData }
+		}
+	>
+		for _, option := range props.Options {
+			<option
+				value={ option.Value }
+				if option.Disabled {
+					disabled
+				}
+				if option.Selected {
+					selected
+				}
+			>
+				{ option.Label }
+			</option>
+		}
+	</select>
+}
+
+type SelectGroupProps struct {
+	Label       string
+	LabelFor    string
+	Error       string
+	Hint        string
+	Required    bool
+	Class       string
+	SelectProps SelectProps
+}
+
+templ SelectGroup(props SelectGroupProps) {
+	<div class={ "space-y-2 " + props.Class }>
+		if props.Label != "" {
+			<label
+				if props.LabelFor != "" {
+					for={ props.LabelFor }
+				}
+				class="text-sm font-medium text-slate-900 dark:text-slate-100"
+			>
+				{ props.Label }
+				if props.Required {
+					<span class="text-red-600 dark:text-red-500">*</span>
+				}
+			</label>
+		}
+		@Select(props.SelectProps)
+		if props.Hint != "" && props.Error == "" {
+			<p class="text-xs text-slate-500 dark:text-slate-400">{ props.Hint }</p>
+		}
+		if props.Error != "" {
+			<p class="text-xs text-red-600 dark:text-red-500" role="alert">{ props.Error }</p>
+		}
+	</div>
+}

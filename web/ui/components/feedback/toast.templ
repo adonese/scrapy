@@ -1,0 +1,165 @@
+package feedback
+
+type ToastProps struct {
+	Type       string // success, error, warning, info
+	Title      string
+	Message    string
+	Duration   int    // auto-dismiss duration in milliseconds (default: 5000)
+	Dismissible bool
+	Class      string
+}
+
+func getToastClasses(props ToastProps) string {
+	baseClasses := "pointer-events-auto w-full max-w-sm overflow-hidden rounded-lg shadow-lg ring-1 ring-black ring-opacity-5"
+
+	// Variant classes
+	var variantClasses string
+	switch props.Type {
+	case "success":
+		variantClasses = "bg-white border-l-4 border-green-600"
+	case "error":
+		variantClasses = "bg-white border-l-4 border-red-600"
+	case "warning":
+		variantClasses = "bg-white border-l-4 border-amber-600"
+	case "info":
+		variantClasses = "bg-white border-l-4 border-blue-600"
+	default: // info
+		variantClasses = "bg-white border-l-4 border-blue-600"
+	}
+
+	classes := baseClasses + " " + variantClasses
+	if props.Class != "" {
+		classes += " " + props.Class
+	}
+	return classes
+}
+
+func getToastIconClasses(toastType string) string {
+	switch toastType {
+	case "success":
+		return "text-green-600"
+	case "error":
+		return "text-red-600"
+	case "warning":
+		return "text-amber-600"
+	case "info":
+		return "text-blue-600"
+	default:
+		return "text-blue-600"
+	}
+}
+
+func getToastIcon(toastType string) string {
+	switch toastType {
+	case "success":
+		return "✓"
+	case "error":
+		return "✕"
+	case "warning":
+		return "⚠"
+	case "info":
+		return "ℹ"
+	default:
+		return "ℹ"
+	}
+}
+
+templ Toast(props ToastProps) {
+	<div
+		class={ getToastClasses(props) }
+		x-data={ "{show: true, duration: " + templ.EscapeString(getToastDuration(props)) + "}" }
+		x-show="show"
+		x-init="if (duration > 0) { setTimeout(() => show = false, duration) }"
+		x-transition:enter="transform ease-out duration-300 transition"
+		x-transition:enter-start="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
+		x-transition:enter-end="translate-y-0 opacity-100 sm:translate-x-0"
+		x-transition:leave="transition ease-in duration-100"
+		x-transition:leave-start="opacity-100"
+		x-transition:leave-end="opacity-0"
+		role="alert"
+		aria-live="assertive"
+		aria-atomic="true"
+	>
+		<div class="p-4">
+			<div class="flex items-start">
+				<div class="flex-shrink-0">
+					<span class={ "inline-flex h-6 w-6 items-center justify-center rounded-full font-bold " + getToastIconClasses(props.Type) }>
+						{ getToastIcon(props.Type) }
+					</span>
+				</div>
+				<div class="ml-3 w-0 flex-1 pt-0.5">
+					if props.Title != "" {
+						<p class="text-sm font-medium text-slate-900">{ props.Title }</p>
+					}
+					if props.Message != "" {
+						<p class="mt-1 text-sm text-slate-500">{ props.Message }</p>
+					}
+				</div>
+				if props.Dismissible {
+					<div class="ml-4 flex flex-shrink-0">
+						<button
+							type="button"
+							@click="show = false"
+							class="inline-flex rounded-md bg-white text-slate-400 hover:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
+							aria-label="Close"
+						>
+							<span class="sr-only">Close</span>
+							<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+								<path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"></path>
+							</svg>
+						</button>
+					</div>
+				}
+			</div>
+		</div>
+	</div>
+}
+
+func getToastDuration(props ToastProps) string {
+	if props.Duration > 0 {
+		return templ.EscapeString(string(rune(props.Duration)))
+	}
+	return "5000"
+}
+
+type ToastContainerProps struct {
+	Position string // top-right, top-left, bottom-right, bottom-left, top-center, bottom-center
+	Class    string
+}
+
+func getToastContainerClasses(props ToastContainerProps) string {
+	baseClasses := "fixed z-50 flex flex-col gap-2 p-4 pointer-events-none"
+
+	var positionClasses string
+	switch props.Position {
+	case "top-right":
+		positionClasses = "top-0 right-0"
+	case "top-left":
+		positionClasses = "top-0 left-0"
+	case "bottom-right":
+		positionClasses = "bottom-0 right-0"
+	case "bottom-left":
+		positionClasses = "bottom-0 left-0"
+	case "top-center":
+		positionClasses = "top-0 left-1/2 -translate-x-1/2"
+	case "bottom-center":
+		positionClasses = "bottom-0 left-1/2 -translate-x-1/2"
+	default: // top-right
+		positionClasses = "top-0 right-0"
+	}
+
+	classes := baseClasses + " " + positionClasses
+	if props.Class != "" {
+		classes += " " + props.Class
+	}
+	return classes
+}
+
+templ ToastContainer(props ToastContainerProps, content templ.Component) {
+	<div
+		class={ getToastContainerClasses(props) }
+		aria-label="Notifications"
+	>
+		@content
+	</div>
+}

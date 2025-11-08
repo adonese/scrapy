@@ -1,0 +1,186 @@
+package data
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+type ChartConfig struct {
+	ID          string
+	Title       string
+	Description string
+	Height      string
+	Type        string      // "line", "bar", "pie", "doughnut", "radar"
+	Data        interface{} // Chart.js data object
+	Options     interface{} // Chart.js options object
+	ShowExport  bool
+	RefreshURL  string // Optional HTMX URL to refresh chart data
+	RefreshInterval string // e.g., "30s"
+}
+
+// ChartWrapper provides a container for Chart.js charts with HTMX support
+templ ChartWrapper(config ChartConfig) {
+	<div
+		class="chart-wrapper bg-white rounded-lg border border-slate-200 p-6"
+		id={ fmt.Sprintf("%s-wrapper", config.ID) }
+		if config.RefreshURL != "" && config.RefreshInterval != "" {
+			hx-get={ config.RefreshURL }
+			hx-trigger={ fmt.Sprintf("every %s", config.RefreshInterval) }
+			hx-swap="outerHTML"
+		}
+	>
+		<!-- Header -->
+		<div class="mb-4 flex items-start justify-between">
+			<div class="flex-1">
+				if config.Title != "" {
+					<h3 class="text-lg font-semibold text-slate-900">{ config.Title }</h3>
+				}
+				if config.Description != "" {
+					<p class="mt-1 text-sm text-slate-600">{ config.Description }</p>
+				}
+			</div>
+
+			if config.ShowExport {
+				<!-- Export Chart Menu -->
+				<div class="relative" x-data="{ open: false }">
+					<button
+						@click="open = !open"
+						class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200"
+					>
+						<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+						</svg>
+					</button>
+					<div
+						x-show="open"
+						@click.away="open = false"
+						x-transition
+						class="absolute right-0 mt-2 w-48 rounded-lg border border-slate-200 bg-white shadow-lg z-10"
+					>
+						<button
+							@click={ fmt.Sprintf("downloadChart('%s', 'png'); open = false", config.ID) }
+							class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-t-lg"
+						>
+							Download PNG
+						</button>
+						<button
+							@click={ fmt.Sprintf("downloadChart('%s', 'svg'); open = false", config.ID) }
+							class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+						>
+							Download SVG
+						</button>
+						<button
+							@click={ fmt.Sprintf("printChart('%s'); open = false", config.ID) }
+							class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-b-lg"
+						>
+							Print Chart
+						</button>
+					</div>
+				</div>
+			}
+		</div>
+
+		<!-- Chart Container -->
+		<div class="chart-container" style={ fmt.Sprintf("height: %s; position: relative;", config.Height) }>
+			<canvas id={ config.ID }></canvas>
+		</div>
+
+		<!-- Initialize Chart.js -->
+		<script type="text/javascript">
+			(function() {
+				// Wait for Chart.js to be loaded
+				if (typeof Chart === 'undefined') {
+					console.error('Chart.js is not loaded. Please include Chart.js before using ChartWrapper.');
+					return;
+				}
+
+				// Get or destroy existing chart instance
+				const existingChart = Chart.getChart({ config.ID });
+				if (existingChart) {
+					existingChart.destroy();
+				}
+
+				// Get canvas context
+				const ctx = document.getElementById({ config.ID }).getContext('2d');
+
+				// Parse config
+				const chartData = { templ.JSONString(config.Data) };
+				const chartOptions = { templ.JSONString(config.Options) };
+
+				// Create chart
+				new Chart(ctx, {
+					type: { config.Type },
+					data: chartData,
+					options: chartOptions
+				});
+			})();
+		</script>
+	</div>
+}
+
+// SimpleChart provides a quick way to create common charts
+templ SimpleChart(id, title, chartType string, labels []string, datasets []Dataset, height string) {
+	@ChartWrapper(ChartConfig{
+		ID:     id,
+		Title:  title,
+		Height: height,
+		Type:   chartType,
+		Data: map[string]interface{}{
+			"labels":   labels,
+			"datasets": datasets,
+		},
+		Options: GetDefaultChartOptions(chartType),
+	})
+}
+
+// Dataset represents a Chart.js dataset
+type Dataset struct {
+	Label           string   `json:"label"`
+	Data            []float64 `json:"data"`
+	BackgroundColor interface{} `json:"backgroundColor,omitempty"`
+	BorderColor     interface{} `json:"borderColor,omitempty"`
+	BorderWidth     int      `json:"borderWidth,omitempty"`
+	Fill            bool     `json:"fill,omitempty"`
+	Tension         float64  `json:"tension,omitempty"`
+}
+
+// GetDefaultChartOptions returns default chart options for a given chart type
+func GetDefaultChartOptions(chartType string) map[string]interface{} {
+	baseOptions := map[string]interface{}{
+		"responsive":          true,
+		"maintainAspectRatio": false,
+		"plugins": map[string]interface{}{
+			"legend": map[string]interface{}{
+				"position": "top",
+			},
+			"tooltip": map[string]interface{}{
+				"mode":      "index",
+				"intersect": false,
+			},
+		},
+	}
+
+	switch chartType {
+	case "line", "bar":
+		baseOptions["scales"] = map[string]interface{}{
+			"y": map[string]interface{}{
+				"beginAtZero": true,
+			},
+		}
+	case "pie", "doughnut":
+		baseOptions["plugins"].(map[string]interface{})["legend"] = map[string]interface{}{
+			"position": "right",
+		}
+	}
+
+	return baseOptions
+}
+
+// Helper function to convert data to JSON string for templ
+func toJSONString(v interface{}) string {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return "{}"
+	}
+	return string(b)
+}

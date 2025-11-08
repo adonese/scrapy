@@ -1,0 +1,86 @@
+package core
+
+type ButtonProps struct {
+	Variant    string            // primary, secondary, danger, ghost, link
+	Size       string            // sm, md, lg
+	Type       string            // button, submit, reset
+	Disabled   bool
+	Class      string            // additional classes
+	HxAttrs    map[string]string // HTMX attributes
+	AlpineData string            // Alpine.js x-data
+	AriaLabel  string
+}
+
+func getButtonClasses(props ButtonProps) string {
+	baseClasses := "inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+
+	// Size classes
+	var sizeClasses string
+	switch props.Size {
+	case "sm":
+		sizeClasses = "h-8 px-3 text-sm rounded-md"
+	case "lg":
+		sizeClasses = "h-12 px-8 text-base rounded-lg"
+	default: // md
+		sizeClasses = "h-10 px-4 text-sm rounded-md"
+	}
+
+	// Variant classes
+	var variantClasses string
+	switch props.Variant {
+	case "primary":
+		variantClasses = "bg-slate-900 dark:bg-slate-700 text-white hover:bg-slate-800 dark:hover:bg-slate-600 focus-visible:ring-slate-900 dark:focus-visible:ring-slate-700"
+	case "secondary":
+		variantClasses = "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 focus-visible:ring-slate-500 dark:focus-visible:ring-slate-400"
+	case "danger":
+		variantClasses = "bg-red-600 dark:bg-red-700 text-white hover:bg-red-700 dark:hover:bg-red-600 focus-visible:ring-red-600 dark:focus-visible:ring-red-500"
+	case "ghost":
+		variantClasses = "hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 focus-visible:ring-slate-500 dark:focus-visible:ring-slate-400"
+	case "link":
+		variantClasses = "text-slate-900 dark:text-slate-100 underline-offset-4 hover:underline focus-visible:ring-slate-500 dark:focus-visible:ring-slate-400"
+	default: // primary
+		variantClasses = "bg-slate-900 dark:bg-slate-700 text-white hover:bg-slate-800 dark:hover:bg-slate-600 focus-visible:ring-slate-900 dark:focus-visible:ring-slate-700"
+	}
+
+	classes := baseClasses + " " + sizeClasses + " " + variantClasses
+	if props.Class != "" {
+		classes += " " + props.Class
+	}
+	return classes
+}
+
+templ Button(props ButtonProps, content templ.Component) {
+	<button
+		type={ props.Type }
+		class={ getButtonClasses(props) }
+		if props.Disabled {
+			disabled
+		}
+		if props.AriaLabel != "" {
+			aria-label={ props.AriaLabel }
+		}
+		if props.AlpineData != "" {
+			x-data={ props.AlpineData }
+		}
+	>
+		@content
+	</button>
+}
+
+templ ButtonText(props ButtonProps, text string) {
+	<button
+		type={ props.Type }
+		class={ getButtonClasses(props) }
+		if props.Disabled {
+			disabled
+		}
+		if props.AriaLabel != "" {
+			aria-label={ props.AriaLabel }
+		}
+		if props.AlpineData != "" {
+			x-data={ props.AlpineData }
+		}
+	>
+		{ text }
+	</button>
+}
