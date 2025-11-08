@@ -10,10 +10,12 @@ package core
 templ ThemeToggle() {
 	<div
 		x-data="{
-			darkMode: localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches),
+			darkMode: (window.safeStorage && window.safeStorage.getItem('theme')) === 'dark' || (!(window.safeStorage && window.safeStorage.getItem('theme')) && window.matchMedia('(prefers-color-scheme: dark)').matches),
 			toggle() {
 				this.darkMode = !this.darkMode;
-				localStorage.setItem('theme', this.darkMode ? 'dark' : 'light');
+				if (window.safeStorage) {
+					window.safeStorage.setItem('theme', this.darkMode ? 'dark' : 'light');
+				}
 				document.documentElement.classList.toggle('dark', this.darkMode);
 			}
 		}"
@@ -66,10 +68,12 @@ templ ThemeToggle() {
 templ ThemeToggleCompact() {
 	<div
 		x-data="{
-			darkMode: localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches),
+			darkMode: (window.safeStorage && window.safeStorage.getItem('theme')) === 'dark' || (!(window.safeStorage && window.safeStorage.getItem('theme')) && window.matchMedia('(prefers-color-scheme: dark)').matches),
 			toggle() {
 				this.darkMode = !this.darkMode;
-				localStorage.setItem('theme', this.darkMode ? 'dark' : 'light');
+				if (window.safeStorage) {
+					window.safeStorage.setItem('theme', this.darkMode ? 'dark' : 'light');
+				}
 				document.documentElement.classList.toggle('dark', this.darkMode);
 			}
 		}"

@@ -38,5 +38,5 @@ Thumbs.db
 *.sqlite
 *.sqlite3
 
-# Generated frontend assets
-web/static/css/output.css
+# Generated frontend assets (optional - you can regenerate with: ~/bin/tailwindcss -i ./web/static/css/input.css -o ./web/static/css/output.css --minify)
+# web/static/css/output.css

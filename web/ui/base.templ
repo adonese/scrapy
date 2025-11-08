@@ -16,6 +16,56 @@ templ BaseLayout(title string) {
             <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
             <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+            <script>
+                // Safe localStorage wrapper for tracking prevention
+                window.safeStorage = {
+                    getItem: function(key) {
+                        try {
+                            return localStorage.getItem(key);
+                        } catch (e) {
+                            console.warn('localStorage blocked:', e);
+                            return null;
+                        }
+                    },
+                    setItem: function(key, value) {
+                        try {
+                            localStorage.setItem(key, value);
+                        } catch (e) {
+                            console.warn('localStorage blocked:', e);
+                        }
+                    },
+                    removeItem: function(key) {
+                        try {
+                            localStorage.removeItem(key);
+                        } catch (e) {
+                            console.warn('localStorage blocked:', e);
+                        }
+                    }
+                };
+
+                // Initialize Alpine data before Alpine loads
+                document.addEventListener('alpine:init', () => {
+                    // Global Alpine store for theme (fallback to light if storage blocked)
+                    Alpine.store('theme', {
+                        current: window.safeStorage.getItem('theme') || 'light',
+                        toggle() {
+                            this.current = this.current === 'dark' ? 'light' : 'dark';
+                            window.safeStorage.setItem('theme', this.current);
+                            if (this.current === 'dark') {
+                                document.documentElement.classList.add('dark');
+                            } else {
+                                document.documentElement.classList.remove('dark');
+                            }
+                        },
+                        init() {
+                            // Apply saved theme on load
+                            if (this.current === 'dark') {
+                                document.documentElement.classList.add('dark');
+                            }
+                        }
+                    });
+                });
+            </script>
             <style>
                 [x-cloak] { display: none !important; }
             </style>
