@@ -55,7 +55,7 @@ jobs:
           gosec -fmt json -out gosec-report.json ./...
 
       - name: Upload security report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: security-report
           path: gosec-report.json
